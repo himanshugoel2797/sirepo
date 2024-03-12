@@ -1,28 +1,28 @@
 {
     "appInfo": {
-       "myapp": {
-            "longName": "MyApp",
-            "shortName": "MyApp"
-        },
-        "epicsllrf": {
-            "longName": "Epicsllrf",
-            "shortName": "Epicsllrf"
-        },
         "activait": {
             "longName": "Activait",
             "shortName": "Activait"
         },
-        "controls": {
-            "longName": "Controls",
-            "shortName": "Controls"
+        "beacon": {
+            "longName": "Beacon",
+            "shortName": "Beacon"
         },
         "cloudmc": {
             "longName": "CloudMC",
             "shortName": "CloudMC"
         },
+        "controls": {
+            "longName": "Controls",
+            "shortName": "Controls"
+        },
         "elegant": {
             "longName": "elegant",
             "shortName": "elegant"
+        },
+        "epicsllrf": {
+            "longName": "Epicsllrf",
+            "shortName": "Epicsllrf"
         },
         "flash": {
             "longName": "FLASH",
@@ -31,6 +31,10 @@
         "genesis": {
             "longName": "GENESIS 1.3",
             "shortName": "GENESIS 1.3"
+        },
+        "hellweg": {
+            "longName": "Hellweg",
+            "shortName": "Hellweg"
         },
         "jspec": {
             "longName": "JSPEC",
@@ -43,6 +47,10 @@
         "madx": {
             "longName": "MAD-X",
             "shortName": "MAD-X"
+        },
+       "myapp": {
+            "longName": "MyApp",
+            "shortName": "MyApp"
         },
         "omega": {
             "longName": "OMEGA",
@@ -59,10 +67,6 @@
         "raydata": {
             "longName": "Raydata",
             "shortName": "Raydata"
-        },
-        "hellweg": {
-            "longName": "Hellweg",
-            "shortName": "Hellweg"
         },
         "shadow": {
             "longName": "SHADOW",

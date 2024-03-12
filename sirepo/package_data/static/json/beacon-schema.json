@@ -1,0 +1,113 @@
+{
+    "appModes": {
+        "default": {
+            "localRoute": "beamline"
+        }
+    },
+    "dynamicFiles": {
+        "sirepoLibs": {
+            "js": [
+                "beacon.js"
+            ]
+        }
+    },
+    "enum": {
+    },
+    "frameIdFields": {
+        "B1B2Animation": [],
+        "B2B3Animation": [],
+        "B3B4Animation": []
+    },
+    "localRoutes": {
+        "beamline": {
+            "route": "/beamline/:simulationId",
+            "config": {
+                "controller": "BeamlineController as beamline",
+                "templateUrl": "/static/html/beacon-beamline.html"
+            }
+        },
+        "ml": {
+            "route": "/ml/:simulationId",
+            "config": {
+                "controller": "MLController as ml",
+                "templateUrl": "/static/html/beacon-ml.html"
+            }
+        }
+    },
+    "model": {
+        "beamline": {
+            "name": ["Name", "ValidatedString"]
+        },
+        "dipole": {
+            "by": ["Vertical Magnetic Field [T]", "Float", 0.4],
+            "length": ["Effective Length [m]", "Float", 0.204],
+            "edge": ["Edge Length [m]", "Float", 0.005, "\"Soft\" edge length for field variation from 10% to 90% [m]; $G/(1 + ((z-zc)/d)^2)^2$ fringe field dependence is assumed"]
+
+        },
+        "electronBeam": {
+            "energy": ["Energy [GeV]", "Float", 0.33],
+            "current": ["Current [A]", "Float", 0.5],
+            "rmsSpread": ["RMS Energy Spread", "Float", 0],
+            "horizontalEmittance": ["Horizontal Emittance [nm]", "Float", 0],
+            "horizontalBeta": ["Horizontal Beta [m]", "Float", 1.0],
+            "horizontalAlpha": ["Horizontal Alpha [rad]", "Float", 0],
+            "horizontalDispersion": ["Horizontal Dispersion [m]", "Float", 0],
+            "horizontalDispersionDerivative": ["Horizontal Dispersion Derivative [rad]", "Float", 0],
+            "verticalEmittance": ["Vertical Emittance [nm]", "Float", 0],
+            "verticalBeta": ["Vertical Beta [m]", "Float", 1.0],
+            "verticalAlpha": ["Vertical Alpha [rad]", "Float", 0],
+            "verticalDispersion": ["Vertical Dispersion [m]", "Float", 0],
+            "verticalDispersionDerivative": ["Vertical Dispersion Derivative [rad]", "Float", 0]
+        },
+        "B1B2Animation": {},
+        "B2B3Animation": {},
+        "B3B4Animation": {}
+    },
+    "view": {
+        "beamline": {
+            "title": "Beamline",
+            "advanced": []
+        },
+        "electronBeam": {
+            "title": "Electron Beam",
+            "advanced": [
+                "energy",
+                "current",
+                "rmsSpread",
+                "beamDefinition",
+                [
+                    ["Horizontal Twiss Parameters", [
+                        "horizontalEmittance",
+                        "horizontalBeta",
+                        "horizontalAlpha",
+                        "horizontalDispersion",
+                        "horizontalDispersionDerivative"
+                    ]],
+                    ["Vertical Twiss Parameters", [
+                        "verticalEmittance",
+                        "verticalBeta",
+                        "verticalAlpha",
+                        "verticalDispersion",
+                        "verticalDispersionDerivative"
+                    ]]
+                ]
+            ]
+        },
+        "simulationStatus": {
+            "title": "Simulation Status",
+            "advanced": []
+        },
+        "B1B2Animation": {
+            "title": "B1 - B2",
+            "advanced": []
+        },
+        "B2B3Animation": {
+            "title": "B2 - B3",
+            "advanced": []
+        },
+        "B3B4Animation": {
+            "title": "B3 - B4",
+            "advanced": []
+        }
+    }
+}

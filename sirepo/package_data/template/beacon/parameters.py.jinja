@@ -1,0 +1,125 @@
+import sys
+import os
+import numpy as np
+
+from SRW_Parallel.SRW_Utilities import plot_SRW_intensity
+from SRW_Parallel.Input_Decks.F2_Single_Magnet_Sim import (
+    F2_Single_Magnet_Multiple_Color_Sim,
+)
+
+params = {
+    "B1_and_B2": {
+        "first_edge_to_window": 2.98,
+        "secon_edge_to_window": 0.58,
+        "p": (488.0e-9, 512.0e-9),
+        "windowToLen": 0.44,
+        "windowApp": 0.0508,
+        "mags": (1.0, 1.0),
+        "Ne": 1,
+    },
+    "B2_and_B3": {
+        "first_edge_to_window": 1.58,
+        "secon_edge_to_window": 0.83,
+        "p": (537.0e-9, 563.0e-9),  # With 25 nm filter
+        # 'p': (400.0e-9, 700.0e-9), # Camera only.
+        "windowToLen": 0.215,
+        "windowApp": 0.038,
+        "mags": (1.0, -1.0),
+        "Ne": 1,
+    },
+    "B3_and_B4": {
+        "first_edge_to_window": 2.79,
+        "secon_edge_to_window": 0.43,
+        "p": (537.0e-9, 563.0e-9),
+        "windowToLen": 0.46,
+        "windowApp": 0.0508,
+        "mags": (1.0, 1.0),
+        "Ne": 1,
+    },
+    "beam_twiss": {
+        "_emit_x": 3.0e-9,
+        "_emit_y": 3.0e-9,
+        "_beta_x": 1.0,
+        "_beta_y": 1.0,
+    },
+    "bend_angle": 0.105,
+    "int_type": 0,
+    # "NN": 2**10,
+    "NN": 2**8,
+}
+
+
+def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
+
+    # Create the simulation
+    first_edge_to_window = params[sim_title]["first_edge_to_window"]  # in meters
+    secon_edge_to_window = params[sim_title]["secon_edge_to_window"]  # in meters
+
+    magnets = sim_title.split("_")
+
+    ###########
+    # Create the simulation
+    NN = params["NN"]
+    wavelength = 400
+    Lbend = 0.204  # Length of the magnet
+    Ledge = 0.05  # Fall off in magnetic field as you exit 4-6
+    Ne = params[sim_title]["Ne"]
+    p = params[sim_title]["p"]
+    windowToLen = params[sim_title]["windowToLen"]
+    windowApp = params[sim_title]["windowApp"]
+
+    a_sim = F2_Single_Magnet_Multiple_Color_Sim(
+        Nx=NN,
+        goal_Bend_Angle=params["bend_angle"]
+        * params[sim_title]["mags"][0]
+        * 180
+        / np.pi,
+        meshZ=first_edge_to_window,
+        ph_lam=wavelength * 1e-9,
+        L_bend=Lbend,
+        L_edge=Ledge,
+        beam_energy=beam_energy,
+        Ne=Ne,
+        p=p,
+        beam_twiss=params["beam_twiss"],
+    )
+    a_sim.run_SR_calculation()
+    a_sim.propagate_wavefront_through_window(appOne=windowApp, windowToLens=windowToLen)
+    a_sim.resize_wavefront()
+
+    b_sim = F2_Single_Magnet_Multiple_Color_Sim(
+        Nx=NN,
+        goal_Bend_Angle=params["bend_angle"]
+        * params[sim_title]["mags"][1]
+        * 180
+        / np.pi,
+        meshZ=secon_edge_to_window,
+        ph_lam=wavelength * 1e-9,
+        L_bend=Lbend,
+        L_edge=Ledge,
+        beam_energy=beam_energy,
+        Ne=Ne,
+        p=p,
+        beam_twiss=params["beam_twiss"],
+    )
+    b_sim.run_SR_calculation()
+    b_sim.propagate_wavefront_through_window(appOne=windowApp, windowToLens=windowToLen)
+    b_sim.resize_wavefront()
+    a_sim.add_wavefront(b_sim.wfr)
+    array, energy = plot_SRW_intensity(
+        a_sim.wfr,
+        title=os.path.join(savedir, sim_title + "_intensity"),
+        fig_num=2,
+        N=1,
+        int_type=params["int_type"],
+        show_colorbar=True,
+    )
+    np.save(savedir + "/" + sim_title + "_intensity.npy", array)
+
+
+def main():
+    for method in ["B1_and_B2", "B2_and_B3", "B3_and_B4"]:
+        run(sim_title=method, savedir=".")
+
+
+main()
