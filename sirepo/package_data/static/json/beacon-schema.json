@@ -40,6 +40,7 @@
     },
     "model": {
         "aperture": {
+            "position": ["Position", "Float"],
             "title": ["Element Name", "String", "Aperture"],
             "size": ["Size [m]", "Float", 0.0508, "", 1e-99],
             "horizontalOffset": ["Horizontal Center Position [m]", "Float", 0],
@@ -49,12 +50,20 @@
             "elements": ["Elements", "Array"]
         },
         "camera": {
+            "position": ["Position", "Float"],
+            "title": ["Element Name", "String", "Aperture"],
             "wavelength": ["Wavelength [nm]", "Float", 488.0],
-            "characteristic": ["Characteristic to Plot", "Characteristic", "1"]
+            "characteristic": ["Characteristic to Plot", "Characteristic", "1"],
+            "apertureSize": ["Aperture Size [m]", "Float", 0.075],
+            "horizontalFocalLength": ["Horizontal Focal Length [m]", "Float", 0.105],
+            "verticalFocalLength": ["Vertical Focal Length [m]", "Float", 0.105],
+            "horizontalOffset": ["Horizontal Center Position [m]", "Float", 0],
+            "verticalOffset": ["Vertical Center Position [m]", "Float", 0]
         },
         "dipole": {
+            "position": ["Position", "Float"],
             "title": ["Element Name", "String", "Bend"],
-            "by": ["Vertical Magnetic Field [T]", "Float", 0.4],
+            "angle": ["Bend Angle [rad]", "Float", 0.105],
             "length": ["Effective Length [m]", "Float", 0.204],
             "edge": ["Edge Length [m]", "Float", 0.005, "\"Soft\" edge length for field variation from 10% to 90% [m]; $G/(1 + ((z-zc)/d)^2)^2$ fringe field dependence is assumed"]
 
@@ -75,14 +84,6 @@
             "verticalDispersion": ["Vertical Dispersion [m]", "Float", 0],
             "verticalDispersionDerivative": ["Vertical Dispersion Derivative [rad]", "Float", 0]
         },
-        "lens": {
-            "title": ["Element Name", "String", "Lens"],
-            "apertureSize": ["Aperture Size [m]", "Float", 0.075],
-            "horizontalFocalLength": ["Horizontal Focal Length [m]", "Float", 0.105],
-            "verticalFocalLength": ["Vertical Focal Length [m]", "Float", 0.105],
-            "horizontalOffset": ["Horizontal Center Position [m]", "Float", 0],
-            "verticalOffset": ["Vertical Center Position [m]", "Float", 0]
-        },
         "B1B2Animation": {},
         "B2B3Animation": {},
         "B3B4Animation": {}
@@ -91,8 +92,9 @@
         "aperture": {
             "title": "Aperture",
             "advanced": [
+                "position",
+                "size",
                 [
-                    "size",
                     ["Horizontal", [
                         "horizontalOffset"
                     ]],
@@ -106,10 +108,31 @@
             "title": "Beamline",
             "advanced": []
         },
+        "camera": {
+            "title": "Camera",
+            "basic": [],
+            "advanced": [
+                "position",
+                "wavelength",
+                "characteristic",
+                "apertureSize",
+                [
+                    ["Horizontal", [
+                        "horizontalFocalLength",
+                        "horizontalOffset"
+                    ]],
+                    ["Vertical", [
+                        "verticalFocalLength",
+                        "verticalOffset"
+                    ]]
+                ]
+            ]
+        },
         "dipole": {
             "title": "Bending Magnet",
             "advanced": [
-                "by",
+                "position",
+                "angle",
                 "length",
                 "edge"
             ]
@@ -120,7 +143,6 @@
                 "energy",
                 "current",
                 "rmsSpread",
-                "beamDefinition",
                 [
                     ["Horizontal Twiss Parameters", [
                         "horizontalEmittance",
@@ -135,23 +157,6 @@
                         "verticalAlpha",
                         "verticalDispersion",
                         "verticalDispersionDerivative"
-                    ]]
-                ]
-            ]
-        },
-        "lens": {
-            "title": "Lens",
-            "basic": [],
-            "advanced": [
-                [
-                    "apertureSize",
-                    ["Horizontal", [
-                        "horizontalFocalLength",
-                        "horizontalOffset"
-                    ]],
-                    ["Vertical", [
-                        "verticalFocalLength",
-                        "verticalOffset"
                     ]]
                 ]
             ]

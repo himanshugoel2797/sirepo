@@ -14,6 +14,13 @@ class SimData(sirepo.sim_data.SimDataBase):
     def fixup_old_data(cls, data, qcall, **kwargs):
         dm = data.models
         cls._init_models(dm, cls.schema().model.keys())
+        if "elements" not in dm.beamline:
+            dm.beamline.elements = []
+        for e in dm.beamline.elements:
+            cls.update_model_defaults(e, e._type)
+            if "photonBeamline" in e:
+                for p in e.photonBeamline:
+                    cls.update_model_defaults(p, p._type)
 
     @classmethod
     def _lib_file_basenames(cls, data):

@@ -1,6 +1,70 @@
 {
     "models": {
         "simulation": {
+        },
+        "beamline": {
+            "elements": [
+                {
+                    "_type": "dipole",
+                    "title": "B1",
+                    "position": 0,
+                    "angle": -0.105
+                },
+                {
+                    "_type": "dipole",
+                    "title": "B2",
+                    "position": 2.4,
+                    "angle": 0.105,
+                    "photonBeamline": [
+                        {
+                            "_type": "aperture",
+                            "title": "Window 1",
+                            "position": 0.376
+                        },
+                        {
+                            "_type": "camera",
+                            "title": "B1 B2 Camera",
+                            "position": 0.44
+                        }
+                    ]
+                },
+                {
+                    "_type": "dipole",
+                    "title": "B3",
+                    "position": 0.75,
+                    "angle": 0.105,
+                    "photonBeamline": [
+                        {
+                            "_type": "aperture",
+                            "title": "Window 2",
+                            "position": 0.626
+                        },
+                        {
+                            "_type": "camera",
+                            "title": "B2 B3 Camera",
+                            "position": 0.215
+                        }
+                    ]
+                },
+                {
+                    "_type": "dipole",
+                    "title": "B4",
+                    "position": 2.36,
+                    "angle": -0.105,
+                    "photonBeamline": [
+                        {
+                            "_type": "aperture",
+                            "title": "Window 3",
+                            "position": 0.226
+                        },
+                        {
+                            "_type": "camera",
+                            "title": "B3 B4 Camera",
+                            "position": 0.46
+                        }
+                    ]
+                }
+            ]
         }
     },
     "simulationType": "beacon"
