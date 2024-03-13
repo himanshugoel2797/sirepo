@@ -1,6 +1,7 @@
-import sys
+import numpy
 import os
-import numpy as np
+import srwpy.srwl_bl
+import sys
 
 from SRW_Parallel.SRW_Utilities import plot_SRW_intensity
 from SRW_Parallel.Input_Decks.F2_Single_Magnet_Sim import (
@@ -73,7 +74,7 @@ def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
         goal_Bend_Angle=params["bend_angle"]
         * params[sim_title]["mags"][0]
         * 180
-        / np.pi,
+        / numpy.pi,
         meshZ=first_edge_to_window,
         ph_lam=wavelength * 1e-9,
         L_bend=Lbend,
@@ -92,7 +93,7 @@ def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
         goal_Bend_Angle=params["bend_angle"]
         * params[sim_title]["mags"][1]
         * 180
-        / np.pi,
+        / numpy.pi,
         meshZ=secon_edge_to_window,
         ph_lam=wavelength * 1e-9,
         L_bend=Lbend,
@@ -106,20 +107,18 @@ def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
     b_sim.propagate_wavefront_through_window(appOne=windowApp, windowToLens=windowToLen)
     b_sim.resize_wavefront()
     a_sim.add_wavefront(b_sim.wfr)
-    array, energy = plot_SRW_intensity(
+    srwpy.srwl_bl.SRWLBeamline().calc_int_from_wfr(
         a_sim.wfr,
-        title=os.path.join(savedir, sim_title + "_intensity"),
-        fig_num=2,
-        N=1,
-        int_type=params["int_type"],
-        show_colorbar=True,
+        _pol=6,
+        _int_type=params["int_type"],
+        _fname=savedir + "/" + sim_title + "_intensity.dat",
+        _pr=False,
     )
-    np.save(savedir + "/" + sim_title + "_intensity.npy", array)
 
 
 def main():
     for method in ["B1_and_B2", "B2_and_B3", "B3_and_B4"]:
-        run(sim_title=method, savedir=".")
+        run(sim_title=method)
 
 
 main()

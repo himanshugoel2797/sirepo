@@ -12,6 +12,10 @@
         }
     },
     "enum": {
+        "Characteristic": [
+            ["0", "Single-Electron Intensity"],
+            ["1", "Multi-Electron Intensity (disregarding energy spread)"]
+        ]
     },
     "frameIdFields": {
         "B1B2Animation": [],
@@ -35,16 +39,28 @@
         }
     },
     "model": {
+        "aperture": {
+            "title": ["Element Name", "String", "Aperture"],
+            "size": ["Size [m]", "Float", 0.0508, "", 1e-99],
+            "horizontalOffset": ["Horizontal Center Position [m]", "Float", 0],
+            "verticalOffset": ["Vertical Center Position [m]", "Float", 0]
+        },
         "beamline": {
-            "name": ["Name", "ValidatedString"]
+            "elements": ["Elements", "Array"]
+        },
+        "camera": {
+            "wavelength": ["Wavelength [nm]", "Float", 488.0],
+            "characteristic": ["Characteristic to Plot", "Characteristic", "1"]
         },
         "dipole": {
+            "title": ["Element Name", "String", "Bend"],
             "by": ["Vertical Magnetic Field [T]", "Float", 0.4],
             "length": ["Effective Length [m]", "Float", 0.204],
             "edge": ["Edge Length [m]", "Float", 0.005, "\"Soft\" edge length for field variation from 10% to 90% [m]; $G/(1 + ((z-zc)/d)^2)^2$ fringe field dependence is assumed"]
 
         },
         "electronBeam": {
+            "title": ["Element Name", "String", "Beam"],
             "energy": ["Energy [GeV]", "Float", 0.33],
             "current": ["Current [A]", "Float", 0.5],
             "rmsSpread": ["RMS Energy Spread", "Float", 0],
@@ -59,14 +75,44 @@
             "verticalDispersion": ["Vertical Dispersion [m]", "Float", 0],
             "verticalDispersionDerivative": ["Vertical Dispersion Derivative [rad]", "Float", 0]
         },
+        "lens": {
+            "title": ["Element Name", "String", "Lens"],
+            "apertureSize": ["Aperture Size [m]", "Float", 0.075],
+            "horizontalFocalLength": ["Horizontal Focal Length [m]", "Float", 0.105],
+            "verticalFocalLength": ["Vertical Focal Length [m]", "Float", 0.105],
+            "horizontalOffset": ["Horizontal Center Position [m]", "Float", 0],
+            "verticalOffset": ["Vertical Center Position [m]", "Float", 0]
+        },
         "B1B2Animation": {},
         "B2B3Animation": {},
         "B3B4Animation": {}
     },
     "view": {
+        "aperture": {
+            "title": "Aperture",
+            "advanced": [
+                [
+                    "size",
+                    ["Horizontal", [
+                        "horizontalOffset"
+                    ]],
+                    ["Vertical", [
+                        "verticalOffset"
+                    ]]
+                ]
+            ]
+        },
         "beamline": {
             "title": "Beamline",
             "advanced": []
+        },
+        "dipole": {
+            "title": "Bending Magnet",
+            "advanced": [
+                "by",
+                "length",
+                "edge"
+            ]
         },
         "electronBeam": {
             "title": "Electron Beam",
@@ -89,6 +135,23 @@
                         "verticalAlpha",
                         "verticalDispersion",
                         "verticalDispersionDerivative"
+                    ]]
+                ]
+            ]
+        },
+        "lens": {
+            "title": "Lens",
+            "basic": [],
+            "advanced": [
+                [
+                    "apertureSize",
+                    ["Horizontal", [
+                        "horizontalFocalLength",
+                        "horizontalOffset"
+                    ]],
+                    ["Vertical", [
+                        "verticalFocalLength",
+                        "verticalOffset"
                     ]]
                 ]
             ]

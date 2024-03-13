@@ -5,9 +5,11 @@
 """
 from pykern import pkio
 from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp
 from sirepo.template import template_common
 import numpy
 import sirepo.sim_data
+import srwpy.uti_plot_com
 
 
 _SIM_DATA, SIM_TYPE, SCHEMA = sirepo.sim_data.template_globals()
@@ -34,17 +36,26 @@ def background_percent_complete(report, run_dir, is_running):
     return res
 
 
+def _superscript(val):
+    return re.sub(r"\^2", "\u00B2", val)
+
+
 def sim_frame(frame_args):
-    v = numpy.load(_plot_file(frame_args.frameReport))
+    data, _, allrange, _, _ = srwpy.uti_plot_com.file_load(
+        _plot_file(frame_args.frameReport)
+    )
+    ar2d = numpy.reshape(data, (allrange[8], allrange[5]))
     return PKDict(
-        x_range=[0, 1],
-        y_range=[0, 1],
-        x_label="x label",
-        y_label="y label",
-        z_label="intensity",
+        x_range=[allrange[3], allrange[4], allrange[5]],
+        y_range=[allrange[6], allrange[7], allrange[8]],
+        x_label="Horizontal Position [m]",
+        y_label="Vertical Position [m]",
+        z_label="Intensity [ph/s/.1%bw/mm²]",
+        # TODO(pjm): show camera wavelength
         title="",
+        # TODO(pjm): show characteristic
         subtitle="",
-        z_matrix=v.tolist(),
+        z_matrix=ar2d.tolist(),
     )
 
 
@@ -61,4 +72,4 @@ def _generate_parameters_file(data):
 
 
 def _plot_file(report):
-    return f"{_PLOTS[report]}_intensity.npy"
+    return f"{_PLOTS[report]}_intensity.dat"
