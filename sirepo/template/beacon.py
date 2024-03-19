@@ -36,8 +36,12 @@ def background_percent_complete(report, run_dir, is_running):
     return res
 
 
-def _superscript(val):
-    return re.sub(r"\^2", "\u00B2", val)
+def get_data_file(run_dir, model, frame, options):
+    return f"{_PLOTS[model]}_intensity.dat"
+
+
+def python_source_for_model(data, model, qcall, **kwargs):
+    return _generate_parameters_file(data)
 
 
 def sim_frame(frame_args):
@@ -73,3 +77,7 @@ def _generate_parameters_file(data):
 
 def _plot_file(report):
     return f"{_PLOTS[report]}_intensity.dat"
+
+
+def _superscript(val):
+    return re.sub(r"\^2", "\u00B2", val)

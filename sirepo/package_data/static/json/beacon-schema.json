@@ -7,7 +7,8 @@
     "dynamicFiles": {
         "sirepoLibs": {
             "js": [
-                "beacon.js"
+                "beacon.js",
+                "sirepo-beamline.js"
             ]
         }
     },
@@ -40,7 +41,7 @@
     },
     "model": {
         "aperture": {
-            "position": ["Position", "Float"],
+            "position": ["Relative Position", "Float"],
             "title": ["Element Name", "String", "Aperture"],
             "size": ["Size [m]", "Float", 0.0508, "", 1e-99],
             "horizontalOffset": ["Horizontal Center Position [m]", "Float", 0],
@@ -50,7 +51,7 @@
             "elements": ["Elements", "Array"]
         },
         "camera": {
-            "position": ["Position", "Float"],
+            "position": ["Relative Position", "Float"],
             "title": ["Element Name", "String", "Aperture"],
             "wavelength": ["Wavelength [nm]", "Float", 488.0],
             "characteristic": ["Characteristic to Plot", "Characteristic", "1"],
@@ -61,7 +62,7 @@
             "verticalOffset": ["Vertical Center Position [m]", "Float", 0]
         },
         "dipole": {
-            "position": ["Position", "Float"],
+            "position": ["Relative Position", "Float"],
             "title": ["Element Name", "String", "Bend"],
             "angle": ["Bend Angle [rad]", "Float", 0.105],
             "length": ["Effective Length [m]", "Float", 0.204],

@@ -18,12 +18,12 @@
                     "photonBeamline": [
                         {
                             "_type": "aperture",
-                            "title": "Window 1",
+                            "title": "W1",
                             "position": 0.376
                         },
                         {
                             "_type": "camera",
-                            "title": "B1 B2 Camera",
+                            "title": "B1 B2",
                             "position": 0.44
                         }
                     ]
@@ -36,12 +36,12 @@
                     "photonBeamline": [
                         {
                             "_type": "aperture",
-                            "title": "Window 2",
+                            "title": "W2",
                             "position": 0.626
                         },
                         {
                             "_type": "camera",
-                            "title": "B2 B3 Camera",
+                            "title": "B2 B3",
                             "position": 0.215
                         }
                     ]
@@ -54,12 +54,12 @@
                     "photonBeamline": [
                         {
                             "_type": "aperture",
-                            "title": "Window 3",
+                            "title": "W3",
                             "position": 0.226
                         },
                         {
                             "_type": "camera",
-                            "title": "B3 B4 Camera",
+                            "title": "B3 B4",
                             "position": 0.46
                         }
                     ]

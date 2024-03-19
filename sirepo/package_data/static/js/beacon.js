@@ -8,14 +8,14 @@ SIREPO.app.config(function() {
 });
 
 SIREPO.app.factory('beaconService', function(appState) {
-    var self = {};
+    const self = {};
     appState.setAppService(self);
     self.computeModel = () => 'animation';
     return self;
 });
 
 SIREPO.app.controller('BeamlineController', function (appState, frameCache, panelState, persistentSimulation, $scope) {
-    var self = this;
+    const self = this;
     self.simScope = $scope;
     self.simHandleStatus = data => {
         self.reports = data.reports;
@@ -61,32 +61,91 @@ SIREPO.app.directive('appHeader', function(appState, beaconService, panelState) 
 });
 
 
-SIREPO.app.directive('beamlineButton', function(panelState) {
+SIREPO.app.directive('beamlineButton', function(beamlineService, panelState) {
     return {
         restrict: 'A',
         scope: {
-            element: '=beamlineButton',
+            item: '=beamlineButton',
         },
         template: `
-<button type="button" data-ng-click="showModel()" data-ng-attr-class="btn btn-sm btn-{{ element.style }}" data-ng-attr-style="position: absolute; top: {{element.y}}px; left: {{element.x}}px">{{ element.title }}</button>
+<button type="button" data-ng-click="togglePopover()" class="btn btn-sm srw-beamline-element-label" data-ng-class="{'btn-{{item.style}}': true}" data-ng-attr-style="position: absolute; top: {{item.y}}px; left: {{item.x}}px">{{ item.title }} <span class="caret"></span></button>
         `,
-        controller: function($scope) {
-            $scope.showModel = () => {
-                panelState.showModalEditor($scope.element.modelAccess.modelKey);
+        controller: function($scope, $element) {
+            $scope.togglePopover = () => {
+                if (beamlineService.activeItem) {
+                    beamlineService.setActiveItem(null);
+                }
+                $($element).find('.srw-beamline-element-label').popover('toggle');
             };
+        },
+        link: function(scope, element) {
+            const el = $(element).find('.srw-beamline-element-label');
 
-            if (! $scope.element.style) {
-                $scope.element.style = 'default';
-            }
+            el.popover({
+                trigger: 'manual',
+                html: true,
+                placement: 'bottom',
+                content: function() {
+                    return $('#srw-' + scope.item.modelAccess.modelKey + '-editor');
+                },
+                // adds sr-beamline-popover class to standard template
+                template: '<div class="popover sr-beamline-popover" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
+            }).on('show.bs.popover', function() {
+                $('.srw-beamline-element-label').not(el).popover('hide');
+                beamlineService.setActiveItem(scope.item.modelAccess.getData());
+                const editor = el.data('bs.popover').getContent();
+                editor.trigger('sr.resetActivePage');
+            }).on('shown.bs.popover', function() {
+                $('.popover-content .form-control').first().select();
+                scope.$apply();
+            }).on('hide.bs.popover', function() {
+                beamlineService.setActiveItem(null);
+                const editor = el.data('bs.popover').getContent();
+                // return the editor to the editor-holder so it will be available for the
+                // next element of this type
+                if (editor) {
+                    $('.srw-editor-holder').append(editor);
+                }
+            });
+
+            scope.$on('$destroy', function() {
+                el.off();
+                const popover = el.data('bs.popover');
+                // popover has a memory leak with $tip user_data which needs to be cleaned up manually
+                if (popover && popover.$tip) {
+                    popover.$tip.removeData('bs.popover');
+                }
+                el.popover('destroy');
+            });
         },
     };
 });
 
-SIREPO.app.directive('beaconBeamline', function(appState) {
+SIREPO.app.directive('editorHolders', function(appState) {
     return {
         restrict: 'A',
         scope: {},
         template: `
+            <div class="srw-editor-holder" style="display:none">
+              <div data-ng-repeat="item in ::allItems">
+                <div class="sr-beamline-editor" id="srw-{{ ::item.type }}-editor" data-beamline-item-editor="" data-model-name="{{ ::item.type }}"></div>
+              </div>
+            </div>
+        `,
+        controller: function($scope) {
+            $scope.allItems = ['aperture', 'camera', 'dipole', 'electronBeam'].map(
+                (n) => { return { type: n }; },
+            );
+        },
+    };
+});
+
+SIREPO.app.directive('beaconBeamline', function(appState, beamlineService) {
+    return {
+        restrict: 'A',
+        scope: {},
+        template: `
+<div data-editor-holders=""></div>
 <div class="text-center" style="width: 1000px; margin: auto; position: relative">
 
 
@@ -128,149 +187,83 @@ SIREPO.app.directive('beaconBeamline', function(appState) {
     <div data-modal-editor="" view-name="{{ el.modelName }}" data-model-data="el.modelAccess"></div>
 </div>
 
+              <div class="row">
+                <form>
+                  <div class="col-md-6 col-sm-8 pull-right" data-ng-show="checkIfDirty()">
+                    <button data-ng-click="saveBeamlineChanges()" class="btn btn-primary sr-button-save-cancel">Save</button>
+                    <button data-ng-click="cancelBeamlineChanges()" class="btn btn-default sr-button-save-cancel">Cancel</button>
+                  </div>
+                </form>
+              </div>
+
 
         `,
         controller: function(appState, $scope) {
+            const style = {
+                aperture: 'warning',
+                camera: 'success',
+                dipole: 'primary',
+                electronBeam: 'default',
+            };
 
-            function findElementByTitle(title) {
-                for (const el of appState.models.beamline.elements) {
+            function element(type, x, y, title) {
+                return {
+                    x: x,
+                    y: y,
+                    title: title,
+                    style: style[type],
+                    modelAccess: {
+                        modelKey: type,
+                        getData: type == 'electronBeam'
+                               ? () => appState.models.electronBeam
+                               : () => findElementByTitle(title),
+                    },
+                };
+            }
+
+            function findElementByTitle(title, items) {
+                for (const el of items || appState.models.beamline.elements) {
                     if (el.title == title) {
                         return el;
+                    }
+                    if (el.photonBeamline) {
+                        const p = findElementByTitle(title, el.photonBeamline);
+                        if (p) {
+                            return p;
+                        }
                     }
                 }
             }
 
             $scope.elements = [
-                {
-                    x: 30,
-                    y: 250,
-                    title: 'Electron Beam',
-                    modelAccess: {
-                        modelKey: 'electronBeam',
-                        getData: () => appState.models.electronBeam,
-                    },
-                },
-                {
-                    x: 290,
-                    y: 250,
-                    title: 'B1',
-                    style: 'primary',
-                    modelAccess: {
-                        modelKey: 'dipole',
-                        getData: () => {
-                            return findElementByTitle('B1');
-                        },
-                    },
-                },
-                {
-                    x: 395,
-                    y: 120,
-                    title: 'B2',
-                    style: 'primary',
-                    modelAccess: {
-                        modelKey: 'dipole',
-                        getData: () => {
-                            return findElementByTitle('B2');
-                        },
-                    },
-                },
-                {
-                    x: 540,
-                    y: 120,
-                    title: 'B3',
-                    style: 'primary',
-                    modelAccess: {
-                        modelKey: 'dipole',
-                        getData: () => {
-                            return findElementByTitle('B3');
-                        },
-                    },
-                },
-                {
-                    x: 645,
-                    y: 250,
-                    title: 'B4',
-                    style: 'primary',
-                    modelAccess: {
-                        modelKey: 'dipole',
-                        getData: () => {
-                            return findElementByTitle('B4');
-                        },
-                    },
-                },
-                {
-                    x: 460,
-                    y: 0,
-                    title: 'W1',
-                    style: 'warning',
-                    modelAccess: {
-                        modelKey: 'aperture',
-                        getData: () => {
-                            return findElementByTitle('Window 1');
-                        },
-                    },
-                },
-                {
-                    x: 645,
-                    y: 120,
-                    title: 'W2',
-                    style: 'warning',
-                    modelAccess: {
-                        modelKey: 'aperture',
-                        getData: () => {
-                            return findElementByTitle('Window 2');
-                        },
-                    },
-                },
-                {
-                    x: 680,
-                    y: 350,
-                    title: 'W3',
-                    style: 'warning',
-                    modelAccess: {
-                        modelKey: 'aperture',
-                        getData: () => {
-                            return findElementByTitle('Window 3');
-                        },
-                    },
-                },
-                {
-                    x: 660,
-                    y: 0,
-                    title: 'B1 B2',
-                    style: 'success',
-                    modelAccess: {
-                        modelKey: 'camera',
-                        getData: () => {
-                            return findElementByTitle('B1 B2 Camera');
-                        },
-                    },
-                },
-                {
-                    x: 760,
-                    y: 120,
-                    title: 'B2 B3',
-                    style: 'success',
-                    modelAccess: {
-                        modelKey: 'camera',
-                        getData: () => {
-                            return findElementByTitle('B2 B3 Camera');
-                        },
-                    },
-                },
-                {
-                    x: 880,
-                    y: 350,
-                    title: 'B3 B4',
-                    style: 'success',
-                    modelAccess: {
-                        modelKey: 'camera',
-                        getData: () => {
-                            return findElementByTitle('B3 B4 Camera');
-                        },
-                    },
-                },
+                element('electronBeam', 30, 250, 'Electron Beam'),
+                element('dipole', 290, 250, 'B1'),
+                element('dipole', 395, 120, 'B2'),
+                element('dipole', 540, 120, 'B3'),
+                element('dipole', 625, 250, 'B4'),
+                element('aperture', 460, 0, 'W1'),
+                element('aperture', 645, 120, 'W2'),
+                element('aperture', 680, 350, 'W3'),
+                element('camera', 660, 0, 'B1 B2'),
+                element('camera', 760, 120, 'B2 B3'),
+                element('camera', 880, 350, 'B3 B4'),
             ];
+
+            $scope.cancelBeamlineChanges = function() {
+                beamlineService.dismissPopup();
+                appState.cancelChanges('beamline');
+            };
+
+            $scope.checkIfDirty = function() {
+                return ! appState.deepEquals(
+                    appState.applicationState().beamline,
+                    appState.models.beamline,
+                );
+            };
+
+            $scope.saveBeamlineChanges = function() {
+                appState.saveChanges('beamline');
+            };
         },
     };
 });
