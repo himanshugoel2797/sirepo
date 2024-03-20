@@ -14,6 +14,11 @@ import srwpy.uti_plot_com
 
 _SIM_DATA, SIM_TYPE, SCHEMA = sirepo.sim_data.template_globals()
 
+_MAGS = PKDict(
+    B1_and_B2="1,1",
+    B2_and_B3="1,-1",
+    B3_and_B4="-1,-1",
+)
 _PLOTS = PKDict(
     B1B2Animation="B1_and_B2",
     B2B3Animation="B2_and_B3",
@@ -109,7 +114,7 @@ def _generate_dipoles(data):
     "p": ({c.wavelength * 1e-9}, {c.wavelength * 1e-9}),
     "windowToLen": {c.position},
     "windowApp": {w.size},
-    "mags": (1, {-1 if el.angle == prev.angle else 1}),
+    "mags": ({_MAGS[n]}),
     "Ne": 1,
 }},
 """
