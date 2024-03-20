@@ -56,7 +56,7 @@ def sim_frame(frame_args):
         x_label="Horizontal Position [m]",
         y_label="Vertical Position [m]",
         z_label="Intensity [ph/s/.1%bw/mm²]",
-        title=f"Wavelength {c.wavelength:.2f}nm",
+        title=f"Wavelength {c.wavelength:.0f}nm",
         subtitle=template_common.enum_text(
             SCHEMA,
             "Characteristic",
@@ -86,8 +86,40 @@ def _camera_for_report(data, report):
     raise AssertionError(f"Camera not found for index: {idx}")
 
 
+def _generate_dipoles(data):
+    res = ""
+    count = 0
+    prev = None
+    for el in data.models.beamline.elements:
+        if el._type == "dipole":
+            if "photonBeamline" in el and len(el.photonBeamline):
+                for el2 in el.photonBeamline:
+                    if el2._type == "camera":
+                        c = el2
+                    elif el2._type == "aperture":
+                        w = el2
+                assert c
+                n = _PLOTS[list(_PLOTS.keys())[count]]
+                count += 1
+                res += f"""
+"{n}": {{
+    "bend_angle": {abs(el.angle)},
+    "first_edge_to_window": {el.position + w.position},
+    "secon_edge_to_window": {w.position},
+    "p": ({c.wavelength * 1e-9}, {c.wavelength * 1e-9}),
+    "windowToLen": {c.position},
+    "windowApp": {w.size},
+    "mags": (1, {-1 if el.angle == prev.angle else 1}),
+    "Ne": 1,
+}},
+"""
+            prev = el
+    return res
+
+
 def _generate_parameters_file(data):
     res, v = template_common.generate_parameters_file(data)
+    v.dipoleList = _generate_dipoles(data)
     return res + template_common.render_jinja(SIM_TYPE, v)
 
 

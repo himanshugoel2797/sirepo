@@ -19,13 +19,13 @@
                         {
                             "_type": "aperture",
                             "title": "W1",
-                            "position": 0.376
+                            "position": 0.58
                         },
                         {
                             "_type": "camera",
                             "title": "B1 B2",
                             "position": 0.44,
-                            "wavelength": 488e-9
+                            "wavelength": 488
                         }
                     ]
                 },
@@ -38,13 +38,13 @@
                         {
                             "_type": "aperture",
                             "title": "W2",
-                            "position": 0.626
+                            "position": 0.83
                         },
                         {
                             "_type": "camera",
                             "title": "B2 B3",
                             "position": 0.215,
-                            "wavelength": 537e-9
+                            "wavelength": 537
                         }
                     ]
                 },
@@ -57,13 +57,13 @@
                         {
                             "_type": "aperture",
                             "title": "W3",
-                            "position": 0.226
+                            "position": 0.43
                         },
                         {
                             "_type": "camera",
                             "title": "B3 B4",
                             "position": 0.46,
-                            "wavelength": 537e-9
+                            "wavelength": 537
                         }
                     ]
                 }

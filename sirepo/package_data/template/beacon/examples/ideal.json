@@ -1,0 +1,153 @@
+{
+    "models": {
+        "aperture": {
+            "horizontalOffset": 0,
+            "size": 0.0508,
+            "title": "Aperture",
+            "verticalOffset": 0
+        },
+        "beamline": {
+            "elements": [
+                {
+                    "_type": "dipole",
+                    "angle": -0.105,
+                    "edge": 0.005,
+                    "length": 0.204,
+                    "position": 0,
+                    "title": "B1"
+                },
+                {
+                    "_type": "dipole",
+                    "angle": 0.105,
+                    "edge": 0.005,
+                    "length": 0.204,
+                    "photonBeamline": [
+                        {
+                            "_type": "aperture",
+                            "horizontalOffset": 0,
+                            "position": 0.58,
+                            "size": 0.0508,
+                            "title": "W1",
+                            "verticalOffset": 0
+                        },
+                        {
+                            "_type": "camera",
+                            "apertureSize": 0.075,
+                            "characteristic": "1",
+                            "horizontalFocalLength": 0.105,
+                            "horizontalOffset": 0,
+                            "position": 0.44,
+                            "title": "B1 B2",
+                            "verticalFocalLength": 0.105,
+                            "verticalOffset": 0,
+                            "wavelength": 488
+                        }
+                    ],
+                    "position": 2.4,
+                    "title": "B2"
+                },
+                {
+                    "_type": "dipole",
+                    "angle": 0.105,
+                    "edge": 0.005,
+                    "length": 0.204,
+                    "photonBeamline": [
+                        {
+                            "_type": "aperture",
+                            "horizontalOffset": 0,
+                            "position": 0.83,
+                            "size": 0.0508,
+                            "title": "W2",
+                            "verticalOffset": 0
+                        },
+                        {
+                            "_type": "camera",
+                            "apertureSize": 0.075,
+                            "characteristic": "1",
+                            "horizontalFocalLength": 0.105,
+                            "horizontalOffset": 0,
+                            "position": 0.215,
+                            "title": "B2 B3",
+                            "verticalFocalLength": 0.105,
+                            "verticalOffset": 0,
+                            "wavelength": 537
+                        }
+                    ],
+                    "position": 0.75,
+                    "title": "B3"
+                },
+                {
+                    "_type": "dipole",
+                    "angle": -0.105,
+                    "edge": 0.005,
+                    "length": 0.204,
+                    "photonBeamline": [
+                        {
+                            "_type": "aperture",
+                            "horizontalOffset": 0,
+                            "position": 0.43,
+                            "size": 0.0508,
+                            "title": "W3",
+                            "verticalOffset": 0
+                        },
+                        {
+                            "_type": "camera",
+                            "apertureSize": 0.075,
+                            "characteristic": "1",
+                            "horizontalFocalLength": 0.105,
+                            "horizontalOffset": 0,
+                            "position": 0.43,
+                            "title": "B3 B4",
+                            "verticalFocalLength": 0.105,
+                            "verticalOffset": 0,
+                            "wavelength": 537
+                        }
+                    ],
+                    "position": 2.36,
+                    "title": "B4"
+                }
+            ]
+        },
+        "camera": {
+            "apertureSize": 0.075,
+            "characteristic": "1",
+            "horizontalFocalLength": 0.105,
+            "horizontalOffset": 0,
+            "title": "Aperture",
+            "verticalFocalLength": 0.105,
+            "verticalOffset": 0,
+            "wavelength": 488
+        },
+        "dipole": {
+            "angle": 0.105,
+            "edge": 0.005,
+            "length": 0.204,
+            "title": "Bend"
+        },
+        "electronBeam": {
+            "current": 0.5,
+            "energy": 0.33,
+            "horizontalAlpha": 0,
+            "horizontalBeta": 1,
+            "horizontalDispersion": 0,
+            "horizontalDispersionDerivative": 0,
+            "horizontalEmittance": 0,
+            "rmsSpread": 0,
+            "title": "Beam",
+            "verticalAlpha": 0,
+            "verticalBeta": 1,
+            "verticalDispersion": 0,
+            "verticalDispersionDerivative": 0,
+            "verticalEmittance": 0
+        },
+        "simulation": {
+            "folder": "/Examples",
+            "name": "Ideal Beamline"
+        },
+        "simulationSettings": {
+            "characteristic": "1",
+            "nx": 800
+        }
+    },
+    "simulationType": "beacon"
+}

@@ -1,3 +1,6 @@
+
+import sirepo.template.srw_debug
+
 import numpy
 import os
 import srwpy.srwl_bl
@@ -9,44 +12,15 @@ from SRW_Parallel.Input_Decks.F2_Single_Magnet_Sim import (
 )
 
 params = {
-    "B1_and_B2": {
-        "first_edge_to_window": 2.98,
-        "secon_edge_to_window": 0.58,
-        "p": (488.0e-9, 512.0e-9),
-        "windowToLen": 0.44,
-        "windowApp": 0.0508,
-        "mags": (1.0, 1.0),
-        "Ne": 1,
-    },
-    "B2_and_B3": {
-        "first_edge_to_window": 1.58,
-        "secon_edge_to_window": 0.83,
-        "p": (537.0e-9, 563.0e-9),  # With 25 nm filter
-        # 'p': (400.0e-9, 700.0e-9), # Camera only.
-        "windowToLen": 0.215,
-        "windowApp": 0.038,
-        "mags": (1.0, -1.0),
-        "Ne": 1,
-    },
-    "B3_and_B4": {
-        "first_edge_to_window": 2.79,
-        "secon_edge_to_window": 0.43,
-        "p": (537.0e-9, 563.0e-9),
-        "windowToLen": 0.46,
-        "windowApp": 0.0508,
-        "mags": (1.0, 1.0),
-        "Ne": 1,
-    },
+{{ dipoleList | indent(4) }}
     "beam_twiss": {
         "_emit_x": 3.0e-9,
         "_emit_y": 3.0e-9,
         "_beta_x": 1.0,
         "_beta_y": 1.0,
     },
-    "bend_angle": 0.105,
-    "int_type": 0,
-    # "NN": 2**10,
-    "NN": 2**8,
+    "int_type": {{ simulationSettings_characteristic }},
+    "NN": {{ simulationSettings_nx }},
 }
 
 
@@ -71,7 +45,7 @@ def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
 
     a_sim = F2_Single_Magnet_Multiple_Color_Sim(
         Nx=NN,
-        goal_Bend_Angle=params["bend_angle"]
+        goal_Bend_Angle=params[sim_title]["bend_angle"]
         * params[sim_title]["mags"][0]
         * 180
         / numpy.pi,
@@ -90,7 +64,7 @@ def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
 
     b_sim = F2_Single_Magnet_Multiple_Color_Sim(
         Nx=NN,
-        goal_Bend_Angle=params["bend_angle"]
+        goal_Bend_Angle=params[sim_title]["bend_angle"]
         * params[sim_title]["mags"][1]
         * 180
         / numpy.pi,
