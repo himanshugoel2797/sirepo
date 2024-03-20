@@ -49,16 +49,19 @@ def sim_frame(frame_args):
         _plot_file(frame_args.frameReport)
     )
     ar2d = numpy.reshape(data, (allrange[8], allrange[5]))
+    c = _camera_for_report(frame_args.sim_in, frame_args.frameReport)
     return PKDict(
         x_range=[allrange[3], allrange[4], allrange[5]],
         y_range=[allrange[6], allrange[7], allrange[8]],
         x_label="Horizontal Position [m]",
         y_label="Vertical Position [m]",
         z_label="Intensity [ph/s/.1%bw/mm²]",
-        # TODO(pjm): show camera wavelength
-        title="",
-        # TODO(pjm): show characteristic
-        subtitle="",
+        title=f"Wavelength {c.wavelength:.2f}nm",
+        subtitle=template_common.enum_text(
+            SCHEMA,
+            "Characteristic",
+            frame_args.sim_in.models.simulationSettings.characteristic,
+        ),
         z_matrix=ar2d.tolist(),
     )
 
@@ -68,6 +71,19 @@ def write_parameters(data, run_dir, is_parallel):
         run_dir.join(template_common.PARAMETERS_PYTHON_FILE),
         _generate_parameters_file(data),
     )
+
+
+def _camera_for_report(data, report):
+    idx = list(_PLOTS.keys()).index(report)
+    count = 0
+    for el in data.models.beamline.elements:
+        if "photonBeamline" in el:
+            for o in el.photonBeamline:
+                if o._type == "camera":
+                    if count == idx:
+                        return o
+                    count += 1
+    raise AssertionError(f"Camera not found for index: {idx}")
 
 
 def _generate_parameters_file(data):

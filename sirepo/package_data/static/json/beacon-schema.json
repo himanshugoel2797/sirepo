@@ -54,7 +54,6 @@
             "position": ["Relative Position", "Float"],
             "title": ["Element Name", "String", "Aperture"],
             "wavelength": ["Wavelength [nm]", "Float", 488.0],
-            "characteristic": ["Characteristic to Plot", "Characteristic", "1"],
             "apertureSize": ["Aperture Size [m]", "Float", 0.075],
             "horizontalFocalLength": ["Horizontal Focal Length [m]", "Float", 0.105],
             "verticalFocalLength": ["Vertical Focal Length [m]", "Float", 0.105],
@@ -84,6 +83,10 @@
             "verticalAlpha": ["Vertical Alpha [rad]", "Float", 0],
             "verticalDispersion": ["Vertical Dispersion [m]", "Float", 0],
             "verticalDispersionDerivative": ["Vertical Dispersion Derivative [rad]", "Float", 0]
+        },
+        "simulationSettings": {
+            "characteristic": ["Characteristic to Plot", "Characteristic", "1"],
+            "nx": ["Grid Size", "Integer", 1024, "Number of grid cells in X and Y for the wavefront calculation"]
         },
         "B1B2Animation": {},
         "B2B3Animation": {},
@@ -115,7 +118,6 @@
             "advanced": [
                 "position",
                 "wavelength",
-                "characteristic",
                 "apertureSize",
                 [
                     ["Horizontal", [
@@ -162,9 +164,12 @@
                 ]
             ]
         },
-        "simulationStatus": {
+        "simulationSettings": {
             "title": "Simulation Status",
-            "advanced": []
+            "advanced": [
+                "nx",
+                "characteristic"
+            ]
         },
         "B1B2Animation": {
             "title": "B1 - B2",

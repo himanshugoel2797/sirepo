@@ -24,7 +24,8 @@
                         {
                             "_type": "camera",
                             "title": "B1 B2",
-                            "position": 0.44
+                            "position": 0.44,
+                            "wavelength": 488e-9
                         }
                     ]
                 },
@@ -42,7 +43,8 @@
                         {
                             "_type": "camera",
                             "title": "B2 B3",
-                            "position": 0.215
+                            "position": 0.215,
+                            "wavelength": 537e-9
                         }
                     ]
                 },
@@ -60,7 +62,8 @@
                         {
                             "_type": "camera",
                             "title": "B3 B4",
-                            "position": 0.46
+                            "position": 0.46,
+                            "wavelength": 537e-9
                         }
                     ]
                 }
