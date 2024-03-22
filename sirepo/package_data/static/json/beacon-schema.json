@@ -9,6 +9,9 @@
             "js": [
                 "beacon.js",
                 "sirepo-beamline.js"
+            ],
+            "css": [
+                "beacon.css"
             ]
         }
     },
@@ -82,7 +85,17 @@
             "verticalBeta": ["Vertical Beta [m]", "Float", 1.0],
             "verticalAlpha": ["Vertical Alpha [rad]", "Float", 0],
             "verticalDispersion": ["Vertical Dispersion [m]", "Float", 0],
-            "verticalDispersionDerivative": ["Vertical Dispersion Derivative [rad]", "Float", 0]
+            "verticalDispersionDerivative": ["Vertical Dispersion Derivative [rad]", "Float", 0],
+            "horizontalPosition": ["Average Horizontal Position [mm]", "Float", 0],
+            "verticalPosition": ["Average Vertical Position [mm]", "Float", 0],
+            "horizontalAngle": ["Average Horizontal Angle [mrad]", "Float", 0],
+            "verticalAngle": ["Average Vertical Angle [mrad]", "Float", 0]
+        },
+        "mlParameters": {
+            "variationElements": ["Element", "VariationElements"],
+            "numSamples": ["Samples per Parameter", "Integer", 10, "", 1],
+            "horizontalResolution": ["Horizontal Resolution", "Integer", 128],
+            "verticalResolution": ["Vertical Resolution", "Integer", 128]
         },
         "simulationSettings": {
             "characteristic": ["Characteristic to Plot", "Characteristic", "1"],
@@ -91,6 +104,9 @@
         "B1B2Animation": {},
         "B2B3Animation": {},
         "B3B4Animation": {}
+    },
+    "strings": {
+        "completionState": ""
     },
     "view": {
         "aperture": {
@@ -143,26 +159,65 @@
         "electronBeam": {
             "title": "Electron Beam",
             "advanced": [
-                "energy",
-                "current",
-                "rmsSpread",
+                ["Main", [
+                    "energy",
+                    "current",
+                    "rmsSpread"
+                ]],
+                ["Twiss Parameters", [
+                    [
+                        ["Horizontal Twiss Parameters", [
+                            "horizontalEmittance",
+                            "horizontalBeta",
+                            "horizontalAlpha",
+                            "horizontalDispersion",
+                            "horizontalDispersionDerivative"
+                       ]],
+                       ["Vertical Twiss Parameters", [
+                           "verticalEmittance",
+                           "verticalBeta",
+                           "verticalAlpha",
+                           "verticalDispersion",
+                           "verticalDispersionDerivative"
+                       ]]
+                    ]
+                ]],
+                ["Position", [
+                    [
+                        ["Horizontal", [
+                            "horizontalPosition",
+                            "horizontalAngle"
+                        ]],
+                        ["Vertical", [
+                            "verticalPosition",
+                            "verticalAngle"
+                        ]]
+                    ]
+                ]]
+            ]
+        },
+        "mlVariations": {
+            "model": "mlParameters",
+            "title": "Machine Learning Inputs",
+            "basic": [
+                "variationElements"
+            ],
+            "advanced": []
+        },
+        "mlParameters": {
+            "title": "Training Data",
+            "basic": [
+                "numSamples",
                 [
-                    ["Horizontal Twiss Parameters", [
-                        "horizontalEmittance",
-                        "horizontalBeta",
-                        "horizontalAlpha",
-                        "horizontalDispersion",
-                        "horizontalDispersionDerivative"
+                    ["Horizontal", [
+                        "horizontalResolution"
                     ]],
-                    ["Vertical Twiss Parameters", [
-                        "verticalEmittance",
-                        "verticalBeta",
-                        "verticalAlpha",
-                        "verticalDispersion",
-                        "verticalDispersionDerivative"
+                    ["Vertical", [
+                        "verticalResolution"
                     ]]
                 ]
-            ]
+            ],
+            "advanced": []
         },
         "simulationSettings": {
             "title": "Simulation Status",

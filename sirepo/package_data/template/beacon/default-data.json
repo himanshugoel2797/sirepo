@@ -5,23 +5,27 @@
         "beamline": {
             "elements": [
                 {
+                    "_id": 1,
                     "_type": "dipole",
                     "title": "B1",
                     "position": 0,
                     "angle": -0.105
                 },
                 {
+                    "_id": 2,
                     "_type": "dipole",
                     "title": "B2",
                     "position": 2.4,
                     "angle": 0.105,
                     "photonBeamline": [
                         {
+                            "_id": 3,
                             "_type": "aperture",
                             "title": "W1",
                             "position": 0.58
                         },
                         {
+                            "_id": 4,
                             "_type": "camera",
                             "title": "B1 B2",
                             "position": 0.44,
@@ -30,17 +34,20 @@
                     ]
                 },
                 {
+                    "_id": 5,
                     "_type": "dipole",
                     "title": "B3",
                     "position": 0.75,
                     "angle": 0.105,
                     "photonBeamline": [
                         {
+                            "_id": 6,
                             "_type": "aperture",
                             "title": "W2",
                             "position": 0.83
                         },
                         {
+                            "_id": 7,
                             "_type": "camera",
                             "title": "B2 B3",
                             "position": 0.215,
@@ -49,17 +56,20 @@
                     ]
                 },
                 {
+                    "_id": 8,
                     "_type": "dipole",
                     "title": "B4",
                     "position": 2.36,
                     "angle": -0.105,
                     "photonBeamline": [
                         {
+                            "_id": 9,
                             "_type": "aperture",
                             "title": "W3",
                             "position": 0.43
                         },
                         {
+                            "_id": 10,
                             "_type": "camera",
                             "title": "B3 B4",
                             "position": 0.46,
@@ -68,6 +78,22 @@
                     ]
                 }
             ]
+        },
+        "electronBeam": {
+            "current": 0.5,
+            "energy": 0.33,
+            "horizontalAlpha": 0,
+            "horizontalBeta": 1,
+            "horizontalDispersion": 0,
+            "horizontalDispersionDerivative": 0,
+            "horizontalEmittance": 3,
+            "rmsSpread": 0,
+            "title": "Beam",
+            "verticalAlpha": 0,
+            "verticalBeta": 1,
+            "verticalDispersion": 0,
+            "verticalDispersionDerivative": 0,
+            "verticalEmittance": 3
         }
     },
     "simulationType": "beacon"

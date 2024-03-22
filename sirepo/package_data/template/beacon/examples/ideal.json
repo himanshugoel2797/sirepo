@@ -9,6 +9,7 @@
         "beamline": {
             "elements": [
                 {
+                    "_id": 1,
                     "_type": "dipole",
                     "angle": -0.105,
                     "edge": 0.005,
@@ -17,12 +18,14 @@
                     "title": "B1"
                 },
                 {
+                    "_id": 2,
                     "_type": "dipole",
                     "angle": 0.105,
                     "edge": 0.005,
                     "length": 0.204,
                     "photonBeamline": [
                         {
+                            "_id": 3,
                             "_type": "aperture",
                             "horizontalOffset": 0,
                             "position": 0.58,
@@ -31,6 +34,7 @@
                             "verticalOffset": 0
                         },
                         {
+                            "_id": 4,
                             "_type": "camera",
                             "apertureSize": 0.075,
                             "characteristic": "1",
@@ -47,12 +51,14 @@
                     "title": "B2"
                 },
                 {
+                    "_id": 5,
                     "_type": "dipole",
                     "angle": 0.105,
                     "edge": 0.005,
                     "length": 0.204,
                     "photonBeamline": [
                         {
+                            "_id": 6,
                             "_type": "aperture",
                             "horizontalOffset": 0,
                             "position": 0.83,
@@ -61,6 +67,7 @@
                             "verticalOffset": 0
                         },
                         {
+                            "_id": 7,
                             "_type": "camera",
                             "apertureSize": 0.075,
                             "characteristic": "1",
@@ -77,12 +84,14 @@
                     "title": "B3"
                 },
                 {
+                    "_id": 8,
                     "_type": "dipole",
                     "angle": -0.105,
                     "edge": 0.005,
                     "length": 0.204,
                     "photonBeamline": [
                         {
+                            "_id": 9,
                             "_type": "aperture",
                             "horizontalOffset": 0,
                             "position": 0.43,
@@ -91,6 +100,7 @@
                             "verticalOffset": 0
                         },
                         {
+                            "_id": 10,
                             "_type": "camera",
                             "apertureSize": 0.075,
                             "characteristic": "1",
@@ -131,14 +141,14 @@
             "horizontalBeta": 1,
             "horizontalDispersion": 0,
             "horizontalDispersionDerivative": 0,
-            "horizontalEmittance": 0,
+            "horizontalEmittance": 3,
             "rmsSpread": 0,
             "title": "Beam",
             "verticalAlpha": 0,
             "verticalBeta": 1,
             "verticalDispersion": 0,
             "verticalDispersionDerivative": 0,
-            "verticalEmittance": 0
+            "verticalEmittance": 3
         },
         "simulation": {
             "folder": "/Examples",

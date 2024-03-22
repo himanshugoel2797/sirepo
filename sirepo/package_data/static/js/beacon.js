@@ -5,6 +5,11 @@ var srdbg = SIREPO.srdbg;
 
 SIREPO.app.config(function() {
     SIREPO.SINGLE_FRAME_ANIMATION = ['B1B2Animation', 'B2B3Animation', 'B3B4Animation'];
+    SIREPO.appFieldEditors += `
+        <div data-ng-switch-when="VariationElements">
+          <div data-variation-elements="" data-model="model" data-field="field"></div>
+        </div>
+    `;
 });
 
 SIREPO.app.factory('beaconService', function(appState) {
@@ -15,6 +20,16 @@ SIREPO.app.factory('beaconService', function(appState) {
 });
 
 SIREPO.app.controller('BeamlineController', function (appState, frameCache, panelState, persistentSimulation, $scope) {
+    const self = this;
+    self.simScope = $scope;
+    self.simHandleStatus = data => {
+        self.reports = data.reports;
+        frameCache.setFrameCount(data.frameCount || 0);
+    };
+    self.simState = persistentSimulation.initSimulationState(self);
+});
+
+SIREPO.app.controller('MLController', function (appState, frameCache, panelState, persistentSimulation, $scope) {
     const self = this;
     self.simScope = $scope;
     self.simHandleStatus = data => {
@@ -48,7 +63,8 @@ SIREPO.app.directive('appHeader', function(appState, beaconService, panelState) 
             <div data-app-header-right="nav">
               <app-header-right-sim-loaded>
                 <div data-sim-sections="">
-                  <li class="sim-section" data-ng-class="{active: nav.isActive('beamline')}"><a href data-ng-click="nav.openSection('beamline')"><span class="glyphicon glyphicon-flash"></span> Beamline</a></li>
+                  <li class="sim-section" data-ng-class="{active: nav.isActive('beamline')}"><a href data-ng-click="nav.openSection('beamline')"><span class="glyphicon glyphicon-option-horizontal"></span> Beamline</a></li>
+                  <li class="sim-section" data-ng-class="{active: nav.isActive('ml')}"><a href data-ng-click="nav.openSection('ml')"><span class="glyphicon glyphicon-equalizer"></span> Machine Learning</a></li>
                 </div>
               </app-header-right-sim-loaded>
               <app-settings>
@@ -251,10 +267,16 @@ SIREPO.app.directive('beaconBeamline', function(appState, beamlineService) {
 
             $scope.cancelBeamlineChanges = function() {
                 beamlineService.dismissPopup();
-                appState.cancelChanges('beamline');
+                appState.cancelChanges(['beamline', 'electronBeam']);
             };
 
             $scope.checkIfDirty = function() {
+                if (! appState.deepEquals(
+                    appState.applicationState().electronBeam,
+                    appState.models.electronBeam,
+                )) {
+                    return true;
+                }
                 return ! appState.deepEquals(
                     appState.applicationState().beamline,
                     appState.models.beamline,
@@ -262,7 +284,22 @@ SIREPO.app.directive('beaconBeamline', function(appState, beamlineService) {
             };
 
             $scope.saveBeamlineChanges = function() {
-                appState.saveChanges('beamline');
+                appState.saveChanges(['beamline', 'electronBeam']);
+            };
+        },
+    };
+});
+
+SIREPO.app.directive('variationElements', function(appState) {
+    return {
+        restrict: 'A',
+        scope: {},
+        template: `
+            <div class="control-label col-sm-5" style="text-align: left"><label>Variations</label></div>
+        `,
+        controller: function($scope) {
+            $scope.m = {
+
             };
         },
     };

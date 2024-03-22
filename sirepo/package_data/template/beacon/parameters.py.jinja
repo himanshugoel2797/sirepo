@@ -13,12 +13,19 @@ from SRW_Parallel.Input_Decks.F2_Single_Magnet_Sim import (
 
 params = {
 {{ dipoleList | indent(4) }}
-    "beam_twiss": {
-        "_emit_x": 3.0e-9,
-        "_emit_y": 3.0e-9,
-        "_beta_x": 1.0,
-        "_beta_y": 1.0,
-    },
+    "beam_twiss": dict(
+        _sig_e={{ electronBeam_rmsSpread }},
+        _emit_x={{ electronBeam_horizontalEmittance * 1e-9 }},
+        _beta_x={{ electronBeam_horizontalBeta }},
+        _alpha_x={{ electronBeam_horizontalAlpha }},
+        _eta_x={{ electronBeam_horizontalDispersion }},
+        _eta_x_pr={{ electronBeam_horizontalDispersionDerivative }},
+        _emit_y={{ electronBeam_verticalEmittance * 1e-9 }},
+        _beta_y={{ electronBeam_verticalBeta }},
+        _alpha_y={{ electronBeam_verticalAlpha }},
+        _eta_y={{ electronBeam_verticalDispersion }},
+        _eta_y_pr={{ electronBeam_verticalDispersionDerivative }},
+    ),
     "int_type": {{ simulationSettings_characteristic }},
     "NN": {{ simulationSettings_nx }},
 }
