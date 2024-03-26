@@ -23,6 +23,12 @@ class SimData(sirepo.sim_data.SimDataBase):
                     cls.update_model_defaults(p, p._type)
 
     @classmethod
+    def _compute_model(cls, analysis_model, *args, **kwargs):
+        if analysis_model == "mlAnimation":
+            return analysis_model
+        return "animation"
+
+    @classmethod
     def _lib_file_basenames(cls, data):
         res = []
         return res

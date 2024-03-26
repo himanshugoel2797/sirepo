@@ -7,7 +7,7 @@ SIREPO.app.config(function() {
     SIREPO.SINGLE_FRAME_ANIMATION = ['B1B2Animation', 'B2B3Animation', 'B3B4Animation'];
     SIREPO.appFieldEditors += `
         <div data-ng-switch-when="VariationElements">
-          <div data-variation-elements="" data-model="model" data-field="field"></div>
+          <div data-variation-elements="" data-model-name="modelName" data-model="model" data-field="field"></div>
         </div>
     `;
 });
@@ -15,7 +15,12 @@ SIREPO.app.config(function() {
 SIREPO.app.factory('beaconService', function(appState) {
     const self = {};
     appState.setAppService(self);
-    self.computeModel = () => 'animation';
+    self.computeModel = (analysisModel) => {
+        if (analysisModel == 'mlAnimation') {
+            return analysisModel;
+        }
+        return'animation';
+    };
     return self;
 });
 
@@ -32,9 +37,9 @@ SIREPO.app.controller('BeamlineController', function (appState, frameCache, pane
 SIREPO.app.controller('MLController', function (appState, frameCache, panelState, persistentSimulation, $scope) {
     const self = this;
     self.simScope = $scope;
+    self.simAnalysisModel = 'mlAnimation';
     self.simHandleStatus = data => {
-        self.reports = data.reports;
-        frameCache.setFrameCount(data.frameCount || 0);
+        //TODO(pjm): provide link to h5 result file
     };
     self.simState = persistentSimulation.initSimulationState(self);
 });
@@ -290,17 +295,102 @@ SIREPO.app.directive('beaconBeamline', function(appState, beamlineService) {
     };
 });
 
-SIREPO.app.directive('variationElements', function(appState) {
+SIREPO.app.directive('variationElements', function() {
     return {
         restrict: 'A',
-        scope: {},
+        scope: {
+            model: '=',
+            modelName: '=',
+            field: '=',
+        },
         template: `
-            <div class="control-label col-sm-5" style="text-align: left"><label>Variations</label></div>
+            <div class="control-label col-sm-offset-4 col-sm-3" style="text-align: left"><label>Variations</label></div>
+            <div class="col-sm-11">
+              <div data-ng-repeat="item in items track by item._id">
+                <div class="col-sm-12">
+                  <hr />
+                  <a href class="sr-beacon-ml-label" data-ng-click="toggleItem(item)" style="text-decoration: none">
+                    <span class="glyphicon" data-ng-class="{
+                      'glyphicon-chevron-up': ! isHidden(item),
+                      'glyphicon-chevron-down': isHidden(item) }"></span>
+                    <b>{{ item.title }}</b>
+                  </a>
+                </div>
+                <div data-ng-show="! isHidden(item)">
+                <div data-ng-repeat="f in item.fields track by $index" class="form-group form-group-sm"
+                  data-model-field="f" data-model-name="item._type" data-model-data="item"
+                  data-label-size="9" data-field-size="3"></div>
+                </div>
+              </div>
+            </div>
         `,
-        controller: function($scope) {
-            $scope.m = {
+        controller: function(appState, $scope) {
+            $scope.items = [];
+            $scope.setDefaultValue = false;
+            if (! $scope.model && $scope.field) {
+                return;
+            }
+            if (! $scope.model[$scope.field]) {
+                $scope.model[$scope.field] = {};
+            }
 
+            function addFields(item) {
+                item.hidden = true;
+                item.fields = [];
+                if (! $scope.model[$scope.field][item._id]) {
+                    $scope.model[$scope.field][item._id] = {};
+                }
+                const m = $scope.model[$scope.field][item._id];
+                item.getData = () => m;
+                for (const [f, v] of Object.entries(SIREPO.APP_SCHEMA.model[item._type])) {
+                    if (v[1] == 'Float') {
+                        if (m[f] === undefined) {
+                            m[f] = 0;
+                            $scope.setDefaultValue = true;
+                        }
+                        if (m[f]) {
+                            item.hidden = false;
+                        }
+                        item.fields.push(f);
+                    }
+                }
+                $scope.items.push(item);
+            }
+
+            function addElement(element) {
+                addFields({
+                    _type: element._type,
+                    _id: element._id,
+                    title: appState.viewInfo(element._type).title + ' ' + element.title,
+                });
+            }
+
+            function init() {
+                addFields({
+                    _type: 'electronBeam',
+                    _id: 0,
+                    title: appState.viewInfo('electronBeam').title,
+                });
+                for (const el of appState.models.beamline.elements) {
+                    addElement(el);
+                    if (el.photonBeamline) {
+                        for (const p of el.photonBeamline) {
+                            addElement(p);
+                        }
+                    }
+                }
+                if ($scope.setDefaultValue) {
+                    appState.saveChanges($scope.modelName);
+                }
+            }
+
+            $scope.isHidden = (item) => item.hidden;
+
+            $scope.toggleItem = (item) => {
+                item.hidden = ! $scope.isHidden(item);
             };
+
+            init();
         },
     };
 });

@@ -3,6 +3,7 @@
 :copyright: Copyright (c) 2024 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern import pkio
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
@@ -24,6 +25,8 @@ _PLOTS = PKDict(
     B2B3Animation="B2_and_B3",
     B3B4Animation="B3_and_B4",
 )
+_RS_OPT_PARAMETERS_PYTHON_FILE = "rsopt.py"
+_RS_OPT_YML_FILE = "rsopt.yml"
 
 
 def background_percent_complete(report, run_dir, is_running):
@@ -72,9 +75,13 @@ def sim_frame(frame_args):
 
 
 def write_parameters(data, run_dir, is_parallel):
+    p = _generate_parameters_file(data)
+    if _is_ml_animation(data):
+        _write_rsopt_files(data, p, run_dir)
+        return
     pkio.write_text(
         run_dir.join(template_common.PARAMETERS_PYTHON_FILE),
-        _generate_parameters_file(data),
+        p,
     )
 
 
@@ -94,7 +101,6 @@ def _camera_for_report(data, report):
 def _generate_dipoles(data):
     res = ""
     count = 0
-    prev = None
     for el in data.models.beamline.elements:
         if el._type == "dipole":
             if "photonBeamline" in el and len(el.photonBeamline):
@@ -118,19 +124,80 @@ def _generate_dipoles(data):
     "Ne": 1,
 }},
 """
-            prev = el
     return res
+
+
+def _generate_rsopt_method(data):
+    return """
+def rsopt_run(*args, **kwargs):
+    for k, v in kwargs.items():
+        n, f = k.split('.')
+        params[n][f] = v
+    main()
+"""
 
 
 def _generate_parameters_file(data):
     res, v = template_common.generate_parameters_file(data)
     v.dipoleList = _generate_dipoles(data)
+    if _is_ml_animation(data):
+        v.rsoptRun = _generate_rsopt_method(data)
     return res + template_common.render_jinja(SIM_TYPE, v)
+
+
+def _generate_rsopt_yml(data):
+    p = data.models.mlParameters
+    # TODO(pjm): parameterize values from variations
+    return f"""
+codes:
+  - python:
+      settings:
+      parameters:
+        B1_and_B2.windowToLen:
+          min: 0.43
+          max: 0.45
+          samples: {p.numSamples}
+          start: 0.44
+      setup:
+        input_file: {_RS_OPT_PARAMETERS_PYTHON_FILE}
+        function: rsopt_run
+        execution_type: parallel
+
+options:
+  software: mesh_scan
+  output_file: rsoptOut
+  sim_dirs_make: True
+"""
 
 
 def _plot_file(report):
     return f"{_PLOTS[report]}_intensity.dat"
 
 
+def _is_ml_animation(data):
+    return data.get("report", "") == "mlAnimation"
+
+
 def _superscript(val):
     return re.sub(r"\^2", "\u00B2", val)
+
+
+def _write_rsopt_files(data, parameters_file, run_dir):
+    pkio.write_text(
+        _RS_OPT_PARAMETERS_PYTHON_FILE,
+        parameters_file,
+    )
+    pkio.write_text(
+        _RS_OPT_YML_FILE,
+        _generate_rsopt_yml(data),
+    )
+    pkio.write_text(
+        run_dir.join(template_common.PARAMETERS_PYTHON_FILE),
+        f"""
+import pykern.pksubprocess
+
+pykern.pksubprocess.check_call_with_signals(
+    ["rsopt", "sample", "configuration", "{_RS_OPT_YML_FILE}"],
+)
+        """,
+    )

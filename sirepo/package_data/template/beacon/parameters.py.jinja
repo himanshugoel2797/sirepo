@@ -102,4 +102,8 @@ def main():
         run(sim_title=method)
 
 
+{% if rsoptRun %}
+{{ rsoptRun }}
+{% else %}
 main()
+{% endif %}

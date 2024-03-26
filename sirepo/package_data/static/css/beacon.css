@@ -1,4 +1,4 @@
 
-.model-mlParameters-variationElements .control-label {
-  text-align: left;
+.sr-beacon-ml-label {
+  color: inherit;
 }

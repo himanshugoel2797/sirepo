@@ -44,7 +44,7 @@
     },
     "model": {
         "aperture": {
-            "position": ["Relative Position", "Float"],
+            "position": ["Relative Position [m]", "Float"],
             "title": ["Element Name", "String", "Aperture"],
             "size": ["Size [m]", "Float", 0.0508, "", 1e-99],
             "horizontalOffset": ["Horizontal Center Position [m]", "Float", 0],
@@ -54,7 +54,7 @@
             "elements": ["Elements", "Array"]
         },
         "camera": {
-            "position": ["Relative Position", "Float"],
+            "position": ["Relative Position [m]", "Float"],
             "title": ["Element Name", "String", "Aperture"],
             "wavelength": ["Wavelength [nm]", "Float", 488.0],
             "apertureSize": ["Aperture Size [m]", "Float", 0.075],
@@ -64,7 +64,7 @@
             "verticalOffset": ["Vertical Center Position [m]", "Float", 0]
         },
         "dipole": {
-            "position": ["Relative Position", "Float"],
+            "position": ["Relative Position [m]", "Float"],
             "title": ["Element Name", "String", "Bend"],
             "angle": ["Bend Angle [rad]", "Float", 0.105],
             "length": ["Effective Length [m]", "Float", 0.204],
@@ -91,11 +91,13 @@
             "horizontalAngle": ["Average Horizontal Angle [mrad]", "Float", 0],
             "verticalAngle": ["Average Vertical Angle [mrad]", "Float", 0]
         },
+        "mlAnimation": {
+        },
         "mlParameters": {
-            "variationElements": ["Element", "VariationElements"],
+            "variationElements": ["Element", "VariationElements", {}],
             "numSamples": ["Samples per Parameter", "Integer", 10, "", 1],
-            "horizontalResolution": ["Horizontal Resolution", "Integer", 128],
-            "verticalResolution": ["Vertical Resolution", "Integer", 128]
+            "horizontalResolution": ["Horizontal Resolution [pixels]", "Integer", 128],
+            "verticalResolution": ["Vertical Resolution [pixels]", "Integer", 128]
         },
         "simulationSettings": {
             "characteristic": ["Characteristic to Plot", "Characteristic", "1"],
@@ -196,6 +198,10 @@
                 ]]
             ]
         },
+        "mlAnimation": {
+            "title": "Create ML Training Data",
+            "advanced": []
+        },
         "mlVariations": {
             "model": "mlParameters",
             "title": "Machine Learning Inputs",
@@ -205,7 +211,7 @@
             "advanced": []
         },
         "mlParameters": {
-            "title": "Training Data",
+            "title": "Samples and Resolution",
             "basic": [
                 "numSamples",
                 [
