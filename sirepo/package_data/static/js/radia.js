@@ -508,7 +508,7 @@ SIREPO.app.factory('radiaVariableService', function(appState, radiaService, rpnS
         return recomputeRequired;
     };
 
-    self.updateRPNVars = () => {
+    self.updateRPNVars = (callback) => {
         if (! appState.models.rpnVariables) {
             appState.models.rpnVariables = [];
         }
@@ -550,7 +550,10 @@ SIREPO.app.factory('radiaVariableService', function(appState, radiaService, rpnS
             }
         }
         if (doSave) {
-            appState.saveChanges(['rpnVariables', 'rpnCache']);
+            appState.saveChanges(['rpnVariables', 'rpnCache'], callback);
+        }
+        else if (callback) {
+            callback();
         }
     };
 
@@ -1447,12 +1450,11 @@ SIREPO.app.directive('dmpImportDialog', function(appState, fileManager, fileUplo
     };
 });
 
+//TODO(pjm): this is a copy of the kickMapReport directive
 SIREPO.app.directive('electronTrajectoryReport', function(appState, panelState) {
     return {
         restrict: 'A',
-        scope: {
-            modelName: '@'
-        },
+        scope: {},
         template: `
             <div class="col-md-6">
                 <div data-ng-if="! dataCleared" data-report-panel="parameter" data-request-priority="0" data-model-name="electronTrajectoryReport"></div>
@@ -1460,25 +1462,8 @@ SIREPO.app.directive('electronTrajectoryReport', function(appState, panelState) 
         `,
         controller: function($scope) {
             $scope.dataCleared = true;
-            $scope.model = appState.models[$scope.modelName];
-
-            function setPanelHidden(doHide) {
-                appState.models[$scope.modelName].hidePanel = doHide;
-                appState.saveQuietly($scope.modelName);
-                appState.autoSave();
-            }
-
-            if (appState.models[$scope.modelName].hidePanel === undefined) {
-                setPanelHidden(true);
-            }
-
             $scope.$on('radiaViewer.loaded', () => {
                 $scope.dataCleared = false;
-                panelState.setHidden($scope.modelName, appState.models[$scope.modelName].hidePanel);
-            });
-
-            $scope.$on(`panel.${$scope.modelName}.hidden`, (e, d) => {
-                setPanelHidden(d);
             });
         },
     };
@@ -1778,24 +1763,17 @@ SIREPO.app.directive('groupEditor', function(appState, radiaService) {
 SIREPO.app.directive('kickMapReport', function(appState, panelState, plotting, radiaService, requestSender, utilities) {
     return {
         restrict: 'A',
-        scope: {
-            direction: '@',
-            viewName: '@',
-        },
+        scope: {},
         template: `
             <div class="col-md-6">
                 <div data-ng-if="! dataCleared" data-report-panel="3d" data-panel-title="Kick Map" data-model-name="kickMapReport"></div>
             </div>
         `,
         controller: function($scope) {
-
             $scope.dataCleared = true;
-
-            $scope.model = appState.models.kickMapReport;
             $scope.$on('radiaViewer.loaded', () => {
                 $scope.dataCleared = false;
             });
-
         },
     };
 });
@@ -3570,9 +3548,7 @@ SIREPO.viewLogic('geomObjectView', function(appState, panelState, radiaService, 
                 loadPoints();
             }
             else {
-                radiaService.updateExtruded($scope.modelData, () => {
-                    radiaService.saveGeometry(true, false, updateShapes);
-                });
+                updateShapes();
             }
         }
         if (modelName === 'stl') {
@@ -3608,13 +3584,15 @@ SIREPO.viewLogic('geomObjectView', function(appState, panelState, radiaService, 
             $scope.modelData.referencePoints = [];
             return;
         }
-        radiaService.buildShapePoints($scope.modelData, setPoints, res => {
-            radiaService.deleteObject($scope.modelData);
-            // The filename in the error is encumbered with model and field which is nonsense to the
-            // average user, so replace it with the original file name
-            throw new Error(res.error.replace(
-                new RegExp(/file \".*\"/, 'i'), `file "${$scope.modelData.pointsFile}"`
-            ));
+        radiaVariableService.updateRPNVars(() => {
+            radiaService.buildShapePoints($scope.modelData, setPoints, res => {
+                radiaService.deleteObject($scope.modelData);
+                // The filename in the error is encumbered with model and field which is nonsense to the
+                // average user, so replace it with the original file name
+                throw new Error(res.error.replace(
+                    new RegExp(/file \".*\"/, 'i'), `file "${$scope.modelData.pointsFile}"`
+                ));
+            });
         });
     }
 
@@ -3645,14 +3623,15 @@ SIREPO.viewLogic('geomObjectView', function(appState, panelState, radiaService, 
     }
 
     function updateShapes() {
-        radiaService.saveGeometry(true, false, () => {
+        radiaService.updateExtruded($scope.modelData, () => {
             ctl.loadObjectViews();
+            radiaService.saveGeometry(true);
         });
     }
 
     function setPoints(data) {
         $scope.modelData.referencePoints = data.points;
-        radiaService.updateExtruded($scope.modelData, updateShapes);
+        updateShapes();
     }
 
     function setSTLSize(data) {

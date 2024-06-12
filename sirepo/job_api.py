@@ -3,6 +3,7 @@
 :copyright: Copyright (c) 2019 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern import pkcompat, pkinspect, pkjson
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdexc, pkdlog, pkdp, pkdpretty, pkdformat
@@ -31,6 +32,11 @@ _MAX_FRAME_SEARCH_DEPTH = 6
 _MUST_HAVE_METHOD = ("api_analysisJob", "api_statefulCompute", "api_statelessCompute")
 
 _JSON_TYPE = re.compile(f"^{pkjson.MIME_TYPE}")
+
+_HTTP_CLIENT_CONNECTION_ERRORS = (
+    tornado.httpclient.HTTPClientError,
+    ConnectionRefusedError,
+)
 
 
 class API(sirepo.quest.API):
@@ -132,8 +138,8 @@ class API(sirepo.quest.API):
                 if len(f) > 0:
                     assert len(f) == 1, "too many files={}".format(f)
                     return self.reply_attachment(f[0])
-            except tornado.httpclient.HTTPClientError:
-                # TODO(robnagler) HTTPClientError is too coarse a check
+            except _HTTP_CLIENT_CONNECTION_ERRORS:
+                # TODO(robnagler) is this too coarse a check?
                 pass
             finally:
                 if t:
@@ -170,7 +176,7 @@ class API(sirepo.quest.API):
                 if x == k:
                     return r
                 e = "expected={} but got ping={}".format(k, x)
-        except tornado.httpclient.HTTPClientError as e2:
+        except _HTTP_CLIENT_CONNECTION_ERRORS as e2:
             pkdlog("HTTPClientError={}", e2)
             e = "unable to connect to supervisor"
         except Exception as e2:
@@ -210,8 +216,18 @@ class API(sirepo.quest.API):
         r = self._request_content(
             PKDict(computeJobHash="unused", jobRunMode=sirepo.job.SBATCH),
         )
-        r.sbatchCredentials = r.pkdel("data")
+        # SECURITY: Don't include credentials so the agent can't see them.
+        r.sbatchCredentials = r.data.sbatchCredentials
+        r.pkdel("data")
         return await self._request_api(_request_content=r)
+
+    @sirepo.quest.Spec("require_user")
+    async def api_sbatchLoginStatus(self):
+        return await self._request_api(
+            _request_content=self._request_content(
+                PKDict(computeJobHash="unused", jobRunMode=sirepo.job.SBATCH),
+            )
+        )
 
     @sirepo.quest.Spec("require_user", frame_id="SimFrameId")
     async def api_simulationFrame(self, frame_id):
@@ -369,11 +385,11 @@ class API(sirepo.quest.API):
                 ), f"sbatchQueue={m.sbatchQueue} not in NERSC_QUEUES={sirepo.job.NERSC_QUEUES}"
                 c.sbatchQueue = m.sbatchQueue
                 c.sbatchProject = m.sbatchProject
-            for f in "sbatchCores", "sbatchHours", "tasksPerNode":
+            for f in "sbatchCores", "sbatchHours", "sbatchNodes", "tasksPerNode":
+                if f not in m:
+                    continue
                 assert m[f] > 0, f"{f}={m[f]} must be greater than 0"
                 c[f] = m[f]
-            if "sbatchNodes" in m:
-                c.sbatchNodes = m.sbatchNodes
             return request_content
 
         d = kwargs.pkdel("req_data")

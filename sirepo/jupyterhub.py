@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Jupyterhub login
+"""JupyterHub login
 
 :copyright: Copyright (c) 2020 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -27,28 +27,12 @@ class SirepoAuthenticator(jupyterhub.auth.Authenticator):
     # See the jupyterhub docs for more info:
     # https://jupyterhub.readthedocs.io/en/stable/api/auth.html
     auto_login = True
-    refresh_pre_spawn = True
-
     sirepo_uri = traitlets.Unicode(config=True, help="uri to reach sirepo")
 
     async def authenticate(self, handler, data):
         # returning None means the user is forbidden (403)
         # https://jupyterhub.readthedocs.io/en/stable/api/auth.html#jupyterhub.auth.Authenticator.authenticate
         return self._check_permissions(handler).get("username")
-
-    async def refresh_user(self, user, handler=None):
-        # Reading jupyterhub code the handler is never None
-        # We need the handler for cookies and redirects
-        assert handler, "handler should never be none"
-        # Returning True/False is what the jupyterhub API expects and jupyterhub
-        # will handle re-authenticating the user if needed.
-        # https://jupyterhub.readthedocs.io/en/stable/api/auth.html#jupyterhub.auth.Authenticator.refresh_user
-        try:
-            return bool(
-                self._check_permissions(handler, should_redirect=False).get("username")
-            )
-        except _UserIsUnauthenticated:
-            return False
 
     def _check_permissions(self, handler, should_redirect=True):
         def _cookies(response):
@@ -69,7 +53,7 @@ class SirepoAuthenticator(jupyterhub.auth.Authenticator):
                 _handle_unauthenticated(m.group(1))
 
         r = requests.get(
-            # POSIT: sirepo.simulation_db.SCHEMA_COMMON.route.checkAuthJupyterhub
+            # POSIT: sirepo.simulation_db.SCHEMA_COMMON.route.checkAuthJupyterHub
             self.sirepo_uri + "/check-auth-jupyterhub",
             cookies={k: handler.get_cookie(k) for k in handler.cookies.keys()},
         )

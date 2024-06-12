@@ -21,7 +21,7 @@ _DEPENDENT_CODES = [
 PROD_FOSS_CODES = frozenset(
     (
         "activait",
-        "cloudmc",
+        "openmc",
         "controls",
         "elegant",
         "genesis",
@@ -44,6 +44,7 @@ _NON_PROD_FOSS_CODES = frozenset(
     (
         "beacon",
         "epicsllrf",
+        "impactt",
         "myapp",
         "hellweg",
     )
@@ -136,11 +137,11 @@ def _init():
     _cfg = pkconfig.init(
         # No secrets should be stored here (see sirepo.job.agent_env)
         api_modules=((), set, "optional api modules, e.g. status"),
-        cloudmc=dict(
+        activait=dict(
             data_storage_url=(
-                "https://github.com/radiasoft/sirepo-data-cloudmc/raw/master/",
+                "https://github.com/radiasoft/sirepo-data-activait/raw/master/",
                 str,
-                "url base to reach cloudmc example h5m files",
+                "url base to reach activait example files",
             ),
         ),
         debug_mode=(pkconfig.in_dev_mode(), bool, "control debugging output"),
@@ -163,6 +164,13 @@ def _init():
             frozenset(),
             set,
             "codes where all users must be authorized via moderation",
+        ),
+        openmc=dict(
+            data_storage_url=(
+                "https://github.com/radiasoft/sirepo-data-cloudmc/raw/master/",
+                str,
+                "url base to reach openmc example h5m files",
+            ),
         ),
         package_path=(
             tuple(["sirepo"]),

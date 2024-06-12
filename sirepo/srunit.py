@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 """Support for unit tests
 
 :copyright: Copyright (c) 2016 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern import pkcollections
 from pykern import pkcompat
+from pykern import pkjson
 from pykern.pkcollections import PKDict
 import base64
 import contextlib
@@ -15,8 +16,8 @@ import os.path
 import pykern.pkinspect
 import re
 import requests
-import urllib
 import threading
+import urllib
 
 #: Default "app"
 MYAPP = "myapp"
@@ -33,6 +34,14 @@ SR_SIM_NAME_DEFAULT = "Scooby Doo"
 
 #: Sirepo db dir
 _DB_DIR = "db"
+
+#: How many checks and how long to wait between checks for scenarios
+_ITER_SLEEP = PKDict(
+    slurm=PKDict(
+        count=5,
+        sleep_secs=5,
+    )
+)
 
 
 __cfg = None
@@ -144,6 +153,45 @@ class _TestClient:
         if feature_config.cfg().ui_websocket:
             self._websocket = _WebSocket(self)
 
+    def assert_post_will_redirect(self, expect_re, *args, **kwargs):
+        rv = self.sr_post(*args, **kwargs)
+        rv.assert_http_redirect(expect_re)
+        return rv
+
+    def error_or_sr_exception(self):
+        """Hack to check for SRException or Error
+
+        Works around the websocket/http differences in this module.
+        What should happen is that an exception is always created and
+        can be checked later. This means fixing some tests. This is
+        easier for now.
+
+        """
+        from pykern.pkunit import pkexcept
+
+        return pkexcept("(SRException|Error)\(")
+
+    def iter_sleep(self, kind, op_desc):
+        import time
+
+        def _setup():
+            rv = PKDict(_ITER_SLEEP[kind])
+            rv.countdown = range(rv.count, -1, -1)
+            return rv
+
+        s = _setup()
+        for i in s.countdown:
+            yield
+            if i > 0:
+                time.sleep(s.sleep_secs)
+        else:
+            pkfail(
+                "timeout secs={} kind={} op_desc={}",
+                s.sleep_secs * s.count,
+                kind,
+                op_desc,
+            )
+
     @contextlib.contextmanager
     def sr_adjust_time(self, days):
         from sirepo import srtime
@@ -201,7 +249,7 @@ class _TestClient:
                         )
 
     def sr_auth_state(self, **kwargs):
-        """Gets authState and prases
+        """Gets authState and parses
 
         Returns:
             dict: parsed auth_state
@@ -213,7 +261,7 @@ class _TestClient:
             r"(\{.*\})",
             pkcompat.from_bytes(self.sr_get("authState").data),
         )
-        s = pkcollections.json_load_any(m.group(1))
+        s = pkjson.load_any(m.group(1))
         for k, v in kwargs.items():
             pkunit.pkeq(
                 v,
@@ -402,9 +450,6 @@ class _TestClient:
         from pykern.pkdebug import pkdlog, pkdexc
         import time
 
-        if self.sr_job_run_mode:
-            data.models[model].jobRunMode = self.sr_job_run_mode
-
         cancel = None
         try:
             r = self.sr_post(
@@ -459,17 +504,9 @@ class _TestClient:
                 raise AssertionError("cancel failed")
 
     def sr_sbatch_animation_run(self, sim_name, compute_model, reports, **kwargs):
-        from pykern.pkunit import pkexcept
-
-        d = self.sr_sim_data(sim_name)
-        if not self.sr_sbatch_logged_in:
-            with pkexcept("SRException.*no-creds"):
-                # Must try to run sim first to seed job_supervisor.db
-                self.sr_run_sim(d, compute_model, expect_completed=False)
-            self.sr_sbatch_login(compute_model, d)
-            self.sr_sbatch_logged_in = True
+        self.sr_sbatch_login(compute_model, sim_name)
         self.sr_animation_run(
-            self.sr_sim_data(sim_name),
+            self.sr_sim_data(sim_name, compute_model=compute_model),
             compute_model,
             reports,
             # Things take longer with Slurm.
@@ -477,27 +514,36 @@ class _TestClient:
             **kwargs,
         )
 
-    def sr_sbatch_login(self, compute_model, data):
-        import getpass
+    def sr_sbatch_creds(self):
+        return PKDict(sbatchCredentials=_cfg().sbatch.copy())
 
-        p = getpass.getuser()
+    def sr_sbatch_login(self, compute_model, sim_name):
+        from pykern.pkunit import pkexcept
+
+        if self.sr_sbatch_logged_in:
+            return
+        d = self.sr_sim_data(sim_name, compute_model=compute_model)
+        with pkexcept("SRException.*no-creds"):
+            # Must try to run sim first to seed job_supervisor.db
+            self.sr_run_sim(d, compute_model, expect_completed=False)
         self.sr_post(
             "sbatchLogin",
             PKDict(
-                password=p,
                 report=compute_model,
-                simulationId=data.models.simulation.simulationId,
-                simulationType=data.simulationType,
-                username=p,
-            ),
-        )
+                simulationId=d.models.simulation.simulationId,
+                simulationType=d.simulationType,
+            ).pkupdate(self.sr_sbatch_creds()),
+            raw_response=True,
+        ).assert_success()
+        self.sr_sbatch_logged_in = True
 
-    def sr_sim_data(self, sim_name=None, sim_type=None):
+    def sr_sim_data(self, sim_name=None, sim_type=None, compute_model=None):
         """Return simulation data by name
 
         Args:
             sim_name (str): case sensitive name ['Scooby Doo']
             sim_type (str): app ['myapp']
+            compute_model (str): what model is selected to set jobRunMode [None]
 
         Returns:
             dict: data
@@ -528,6 +574,8 @@ class _TestClient:
             ),
         )
         pkunit.pkeq(sim_name, res.models.simulation.name)
+        if compute_model and self.sr_job_run_mode:
+            res.models[compute_model].jobRunMode = self.sr_job_run_mode
         return res
 
     def sr_sim_type_set(self, sim_type=None):
@@ -698,22 +746,10 @@ class _TestClient:
 
 class _Response:
     def assert_http_redirect(self, expect_re):
-        from pykern import pkjson, pkunit, pkdebug
-        from sirepo import uri
+        from pykern import pkunit, pkdebug
 
-        if not (getattr(self, "_is_sr_exception", False) and self.status_code == 200):
-            self.assert_http_status(302)
-            pkunit.pkre(expect_re, self.header_get("Location"))
-            return
-        # srException case is raw response
-        r = self._maybe_json_decode()
-        pkdebug.pkdp(r)
-        u = None
-        if (x := r.get("srException")) and x.routeName == "httpRedirect":
-            u = x.params.uri
-        if not u:
-            u = uri.local_route(self._test_client.sr_sim_type, r.routeName, r.params)
-        pkunit.pkre(expect_re, u)
+        self.assert_http_status(302)
+        pkunit.pkre(expect_re, self.header_get("Location"))
 
     def assert_http_status(self, expect):
         from pykern import pkunit
@@ -735,7 +771,7 @@ class _Response:
         if isinstance(d, dict) and (
             d.get("state") == "error" or d.get("error") is not None
         ):
-            raise util.UserAlert(
+            raise util.Error(
                 d.get("error", "internal error"),
                 "reply in error reply={}",
                 d,
@@ -751,6 +787,32 @@ class _Response:
 
     def header_get(self, name):
         return self._headers[name]
+
+    def _convert_http_status(self, sr_args):
+        """set self.status_code
+
+        Returns:
+            bool: True if is a redirect
+        """
+        from pykern import pkdebug
+        from sirepo import uri
+
+        if sr_args.routeName == "httpException":
+            self.status_code = sr_args.params.code
+            return False
+        elif sr_args.routeName == "httpRedirect":
+            self.change_to_redirect(sr_args.params.uri)
+            return True
+        elif not uri.is_sr_exception_only(
+            self._test_client.sr_sim_type, sr_args.routeName
+        ):
+            self.change_to_redirect(
+                uri.local_route(
+                    self._test_client.sr_sim_type, sr_args.routeName, sr_args.params
+                )
+            )
+            return True
+        return False
 
     def _maybe_json_decode(self):
         from pykern import pkjson
@@ -773,22 +835,27 @@ class _HTTPResponse(_Response):
         self._headers = reply.headers
 
     def process(self, raw_response):
+        from pykern import pkdebug
         from sirepo import util, reply
 
-        self._is_sr_exception = False
         # Emulate code in sirepo.js to deal with redirects
-        if self.status_code == 200 and self.mimetype == "text/html":
-            m = _JAVASCRIPT_REDIRECT_RE.search(pkcompat.from_bytes(self.data))
-            if m:
-                if m.group(1).endswith("#/error"):
-                    raise util.Error(
-                        PKDict(error="server error uri={}".format(m.group(1))),
-                    )
-                return self.change_to_redirect(m.group(1))
-        d = self._maybe_json_decode()
-        if isinstance(d, dict) and d.get("state") == reply.SR_EXCEPTION_STATE:
-            # Even in raw_response, we need to know this
-            self._is_sr_exception = True
+        if self.status_code == 200:
+            if self.mimetype == "text/html":
+                m = _JAVASCRIPT_REDIRECT_RE.search(pkcompat.from_bytes(self.data))
+                if m:
+                    if m.group(1).endswith("#/error"):
+                        raise util.Error(
+                            PKDict(error="server error uri={}".format(m.group(1))),
+                        )
+                    return self.change_to_redirect(m.group(1))
+            else:
+                d = self._maybe_json_decode()
+                if (
+                    isinstance(d, dict)
+                    and d.get("state") == reply.SR_EXCEPTION_STATE
+                    and self._convert_http_status(d.srException)
+                ):
+                    return self
         if raw_response:
             return self
         return self._assert_not_exception()
@@ -803,6 +870,12 @@ class _HTTPResponse(_Response):
             raise util.SRException(
                 d.srException.routeName,
                 d.srException.params,
+            )
+        if self.status_code != 200:
+            raise util.Error(
+                f"unexpected status={self.status_code}",
+                "reply={}",
+                self.data,
             )
         return d
 
@@ -846,6 +919,8 @@ class _WebSocket:
                     kind=const.SCHEMA_COMMON.websocketMsg.kind.httpRequest,
                     uri=sirepo_uri.decode_to_str(encoded_uri),
                     version=const.SCHEMA_COMMON.websocketMsg.version,
+                    # POSIT: uri_router will look for this in_dev_mode
+                    srunit_caller=str(pykern.pkinspect.caller()),
                 ),
             )
             if op == "get":
@@ -965,7 +1040,7 @@ class _WebSocketRequest:
 class _WebSocketResponse(_Response):
     def __init__(self, msg, req_msg, websocket):
         from pykern.pkdebug import pkdp
-        from sirepo import const
+        from sirepo import const, util
         import msgpack
 
         self._req_msg = req_msg
@@ -989,16 +1064,16 @@ class _WebSocketResponse(_Response):
         self.mimetype = "application/octet"
         self.status_code = 200
         if const.SCHEMA_COMMON.websocketMsg.kind.httpReply == h.kind:
-            self._is_sr_exception = False
+            self._sr_exception = None
         elif const.SCHEMA_COMMON.websocketMsg.kind.srException == h.kind:
-            self._is_sr_exception = True
+            self._sr_exception = util.SRException(self.data.routeName, self.data.params)
         else:
             raise AssertionError(f"invalid msg.kind={h.kind}")
 
     def assert_http_status(self, expect):
-        from pykern import pkunit
+        from pykern import pkunit, pkdebug
 
-        if expect != 200 and not self._is_sr_exception:
+        if expect != 200 and not self._sr_exception:
             pkunit.pkfail("not an srException data={}", self.data)
         super().assert_http_status(expect)
 
@@ -1006,35 +1081,44 @@ class _WebSocketResponse(_Response):
         return self._headers[name]
 
     def process(self, raw_response):
-        from sirepo import util
+        from sirepo import util, reply
 
-        if not self._is_sr_exception:
+        def _data_to_json():
+            from pykern import pkjson
+
+            if not isinstance(self.data, (dict, list)):
+                return self
+            if self._sr_exception:
+                self.data = PKDict(
+                    state=reply.SR_EXCEPTION_STATE,
+                    srException=self.data,
+                )
+            # Opposite of what you expect: raw_response is encoded json so need to encode
+            self.mimetype = pkjson.MIME_TYPE
+            self.data = pkjson.dump_pretty(self.data, pretty=False)
+            return self
+
+        if not self._sr_exception:
             if raw_response:
-                return self._data_to_json()
+                return _data_to_json()
             return self.data
-        if self.data.routeName == "httpException":
-            self.status_code = self.data.params.code
-        elif self.data.routeName == "httpRedirect":
-            self.change_to_redirect(self.data.params.uri)
-        else:
-            pass
+        if self._convert_http_status(self._sr_exception.sr_args):
+            return self
         if raw_response:
-            return self._data_to_json()
-        # Always raises, because _is_sr_exception is True at this point
+            return _data_to_json()
+        # Always raises, because _sr_exception is truthy at this point
         self._assert_not_exception()
 
     def _assert_not_exception(self):
         from sirepo import util
+        from pykern.pkdebug import pkdp
 
-        if not self._is_sr_exception:
-            return self._maybe_json_decode()
+        # All websocket errors are sr exceptions
+        if self._sr_exception:
+            raise self._sr_exception
         if self.status_code != 200:
-            raise util.Error(
-                f"unexpected status={self.status_code}",
-                "reply={}",
-                self.data,
-            )
-        raise util.SRException(self.data.routeName, self.data.params)
+            raise util.Error(f"unexpected status={self.status_code}", "reply={}", d)
+        return self._maybe_json_decode()
 
     def _async_msg_setCookies(self, content):
         self._test_client.cookie_jar.extract_cookies(
@@ -1047,15 +1131,6 @@ class _WebSocketResponse(_Response):
         )
         self._websocket.save_cookie_hash()
 
-    def _data_to_json(self):
-        from pykern import pkjson
-
-        if isinstance(self.data, (dict, list)):
-            # Opposite of what you expect: raw_response is encoded json so need to encode
-            self.mimetype = pkjson.MIME_TYPE
-            self.data = pkjson.dump_pretty(self.data, pretty=False)
-        return self
-
 
 def _cfg():
     global __cfg
@@ -1064,9 +1139,15 @@ def _cfg():
         return __cfg
 
     from pykern import pkconfig
+    import getpass
 
+    u = getpass.getuser()
     __cfg = pkconfig.init(
         # 50 is based on a 2.2 GHz server
         cpu_div=(50, int, "cpu speed divisor to compute timeouts"),
+        sbatch=dict(
+            password=(u, str, "password to login to sbatch"),
+            username=(u, str, "user to login to sbatch"),
+        ),
     )
     return __cfg

@@ -3,6 +3,7 @@
 :copyright: Copyright (c) 2019 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern import pkconfig, pkinspect, pkconfig, pkjson
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp, pkdlog, pkdc, pkdexc, pkdformat
@@ -35,10 +36,6 @@ _DEFAULT_CLASS = None
 _DEFAULT_MODULE = "local"
 
 _cfg = None
-
-_CPU_SLOT_OPS = frozenset((job.OP_ANALYSIS, job.OP_RUN))
-
-SLOT_OPS = frozenset().union(*[_CPU_SLOT_OPS, (job.OP_IO,)])
 
 _UNTIMED_OPS = frozenset(
     (job.OP_ALIVE, job.OP_CANCEL, job.OP_ERROR, job.OP_KILL, job.OP_OK)
@@ -76,7 +73,7 @@ class DriverBase(PKDict):
             # TODO(robnagler) sbatch could override OP_RUN, but not OP_ANALYSIS
             # because OP_ANALYSIS touches the directory sometimes. Reasonably
             # there should only be one OP_ANALYSIS running on an agent at one time.
-            op_slot_q=PKDict({k: job_supervisor.SlotQueue() for k in SLOT_OPS}),
+            op_slot_q=PKDict({k: job_supervisor.SlotQueue() for k in job.SLOT_OPS}),
             uid=op.msg.uid,
             _agent_id=job.unique_key(),
             _agent_life_change_lock=tornado.locks.Lock(),
@@ -98,6 +95,9 @@ class DriverBase(PKDict):
         # Drivers persist for the life of the program so they are never removed
         self.__instances[self._agent_id] = self
         pkdlog("{}", self)
+
+    def agent_is_ready_or_starting(self):
+        return self._websocket_ready.is_set() or bool(self._websocket_ready_timeout)
 
     def destroy_op(self, op):
         """Remove op from our list of sends"""
@@ -308,7 +308,7 @@ class DriverBase(PKDict):
         self._websocket_ready_timeout_cancel()
         if self._websocket:
             if self._websocket != msg.handler:
-                raise AssertionError(f"incoming msg.content={msg.content}")
+                raise AssertionError(pkdformat("incoming msg.content={}", msg.content))
         else:
             self._websocket = msg.handler
         self._websocket_ready.set()
@@ -325,8 +325,7 @@ class DriverBase(PKDict):
             return
         try:
             async with self._agent_life_change_lock:
-                if self._websocket_ready_timeout or self._websocket_ready.is_set():
-                    # agent is starting or ready
+                if self.agent_is_ready_or_starting():
                     return
                 pkdlog("{} {} await=_do_agent_start", self, op)
                 # All awaits must be after this. If a call hangs the timeout
@@ -394,10 +393,6 @@ class DriverBase(PKDict):
         if n in (job.OP_CANCEL, job.OP_KILL, job.OP_BEGIN_SESSION):
             return res
         if n == job.OP_SBATCH_LOGIN:
-            if self._prepared_sends:
-                raise AssertionError(
-                    f"received op={op} but have _prepared_sends={self._prepared_sends}",
-                )
             return res
         await _alloc_check(
             op.op_slot.alloc, "Waiting for another simulation to complete await=op_slot"
@@ -406,7 +401,7 @@ class DriverBase(PKDict):
             op.run_dir_slot.alloc,
             "Waiting for access to simulation state await=run_dir_slot",
         )
-        if n not in _CPU_SLOT_OPS:
+        if n not in job.CPU_SLOT_OPS:
             return res
         # once job-op relative resources are acquired, ask for global resources
         # so we only acquire on global resources, once we know we are ready to go.
