@@ -64,6 +64,12 @@ def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
         Ne=Ne,
         p=p,
         beam_twiss=params["beam_twiss"],
+        beam_offset=dict(
+            _x0=0,
+            _xp0=0,
+            _y0=0,
+            _yp0=0,
+        ),
     )
     a_sim.run_SR_calculation()
     a_sim.propagate_wavefront_through_window(appOne=windowApp, windowToLens=windowToLen)
@@ -83,6 +89,12 @@ def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
         Ne=Ne,
         p=p,
         beam_twiss=params["beam_twiss"],
+        beam_offset=dict(
+            _x0=0,
+            _xp0=0,
+            _y0=0,
+            _yp0=0,
+        ),
     )
     b_sim.run_SR_calculation()
     b_sim.propagate_wavefront_through_window(appOne=windowApp, windowToLens=windowToLen)
