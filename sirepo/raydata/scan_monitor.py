@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """ray data scan monitor
 
 :copyright: Copyright (c) 2023 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern import pkasyncio
 from pykern import pkconfig
 from pykern import pkio
@@ -16,19 +16,22 @@ import databroker.queries
 import datetime
 import functools
 import io
+import itertools
 import math
 import pymongo
 import re
 import requests
+import sirepo.feature_config
 import sirepo.raydata.adaptive_workflow
 import sirepo.raydata.analysis_driver
 import sirepo.raydata.databroker
+import sirepo.sim_data
 import sirepo.srdb
 import sirepo.srtime
+import sirepo.tornado
 import sqlalchemy
 import sqlalchemy.ext.declarative
 import sqlalchemy.orm
-import tornado.web
 import zipfile
 
 #: task(s) monitoring the execution of the analysis process
@@ -37,14 +40,12 @@ _ANALYSIS_PROCESSOR_TASKS = None
 #: task(s) monitoring catalogs for new scans
 _CATALOG_MONITOR_TASKS = PKDict()
 
-_DEFAULT_COLUMNS = PKDict(
-    start="time",
-    stop="time",
-    suid="rduid",
-)
-
 # TODO(e-carlin): tune this number
 _MAX_NUM_SCANS = 1000
+
+# Fields that come from the top-level of metadata (as opposed to start document).
+# Must match key name from _default_columns()
+_METADATA_COLUMNS = {"start", "stop", "suid"}
 
 _NON_DISPLAY_SCAN_FIELDS = "rduid"
 
@@ -55,6 +56,8 @@ _SCANS_AWAITING_ANALYSIS = []
 
 #: path scan_monitor registers to receive api requests
 _URI = "/scan-monitor"
+
+_SIM_TYPE = "raydata"
 
 cfg = None
 
@@ -244,7 +247,7 @@ class _Analysis(_DbBase):
 # TODO(e-carlin): copied from sirepo
 # TODO(e-carlin): Since we are going to sockets for communication we should probably use them here.
 # But, for now it is easier to just make a normal http request
-class _JsonPostRequestHandler(tornado.web.RequestHandler):
+class _JsonPostRequestHandler(sirepo.tornado.AuthHeaderRequestHandler):
     def set_default_headers(self):
         self.set_header("Content-Type", pkjson.CONTENT_TYPE)
 
@@ -252,9 +255,6 @@ class _JsonPostRequestHandler(tornado.web.RequestHandler):
 class _RequestHandler(_JsonPostRequestHandler):
     async def _incoming(self, body):
         return getattr(self, "_request_" + body.method)(body.data.get("args"))
-
-    async def post(self):
-        self.write(await self._incoming(PKDict(pkjson.load_any(self.request.body))))
 
     def _build_search_terms(self, terms):
         res = []
@@ -343,7 +343,9 @@ class _RequestHandler(_JsonPostRequestHandler):
             return q
 
         def _sort_params(req_data):
-            c = _DEFAULT_COLUMNS.get(req_data.sortColumn, req_data.sortColumn)
+            c = _default_columns(req_data.catalogName).get(
+                req_data.sortColumn, req_data.sortColumn
+            )
             s = [
                 (
                     c,
@@ -495,6 +497,17 @@ class _RequestHandler(_JsonPostRequestHandler):
             )
         )
 
+    def _sr_authenticate(self, token):
+        if (
+            token
+            == sirepo.feature_config.for_sim_type(_SIM_TYPE).scan_monitor_api_secret
+        ):
+            return token
+        raise sirepo.tornado.error_forbidden()
+
+    async def _sr_post(self, *args, **kwargs):
+        self.write(await self._incoming(PKDict(pkjson.load_any(self.request.body))))
+
 
 async def _init_analysis_processors():
     global _ANALYSIS_PROCESSOR_TASKS
@@ -552,6 +565,20 @@ async def _init_analysis_processors():
 
 def _display_columns(columns):
     return [k for k in columns if k not in _NON_DISPLAY_SCAN_FIELDS]
+
+
+def _default_columns(catalog_name):
+    return PKDict(
+        start="time",
+        stop="time",
+        suid="uid",
+        **{
+            e: e
+            for e in sirepo.sim_data.get_class(_SIM_TYPE)
+            .schema()
+            .constants.defaultColumns.get(catalog_name, [])
+        },
+    )
 
 
 def _get_detailed_status(catalog_name, rduid):
@@ -647,6 +674,9 @@ def _scan_index(rduid, req_data):
 def _scan_info(
     rduid, status, detailed_status, analysis_elapsed_time, req_data, all_columns
 ):
+    def _get_start_field(metadata, column):
+        return
+
     m = sirepo.raydata.databroker.get_metadata(rduid, req_data.catalogName)
     d = PKDict(
         rduid=rduid,
@@ -657,12 +687,15 @@ def _scan_info(
             PKDict(rduid=rduid, **req_data)
         ).has_analysis_pdfs(),
     )
-    for c in _DEFAULT_COLUMNS.keys():
-        d[c] = getattr(m, c)()
-
-    for c in req_data.get("selectedColumns", []):
-        d[c] = m.get_start_field(c, unchecked=True)
-
+    for c in itertools.chain(
+        _default_columns(req_data.catalogName).keys(),
+        req_data.get("selectedColumns", []),
+    ):
+        d[c] = (
+            getattr(m, c)()
+            if c in _METADATA_COLUMNS
+            else m.get_start_field(c, unchecked=True)
+        )
     for c in m.get_start_fields():
         all_columns.add(c)
 
@@ -737,7 +770,7 @@ def start():
                 "max number of analyses that can run concurrently",
             ),
             db_dir=pkconfig.RequiredUnlessDev(
-                sirepo.srdb.root().join("raydata"),
+                sirepo.srdb.root().join(_SIM_TYPE),
                 pkio.py_path,
                 "root directory for db",
             ),

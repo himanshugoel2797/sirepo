@@ -102,8 +102,14 @@ SIREPO.app.factory('columnsService', function(appState, requestSender, $rootScop
         );
     }
 
-    self.defaultColumns = (analysisStatus) => {
-        const res = ['status', 'start', 'stop', 'suid'];
+    self.defaultColumns = (analysisStatus, appState) => {
+        const res = [
+	    'status',
+	    'start',
+	    'stop',
+	    'suid',
+	    ...(SIREPO.APP_SCHEMA.constants.defaultColumns[appState.models.catalog.catalogName] || []),
+	];
         if (analysisStatus == 'queued') {
             res.splice(1, 0, 'queue order');
         }
@@ -440,15 +446,15 @@ SIREPO.app.directive('scansTable', function() {
                     <tr>
                       <th style="width: 20px; height: 40px; white-space: nowrap" data-ng-show="showPdfColumn"><input type="checkbox" data-ng-checked="pdfSelectAllScans" data-ng-click="togglePdfSelectAll()"/> <span style="vertical-align: top">PDF</span></th>
                       <th data-ng-repeat="column in columnHeaders track by $index" class="raydata-removable-column" style="width: 100px; height: 40px; white-space: nowrap">
-                        <span style="color:lightgray;" data-ng-class="arrowClass(column)"></span>
-                        <span style="cursor: pointer" data-ng-click="sortCol(column)">{{ column }}</span>
+                        <span data-ng-if="columnIsSortable(column)" style="color:lightgray;" data-ng-class="arrowClass(column)"></span>
+                        <span data-ng-attr-style="{{ columnIsSortable(column) ? 'cursor: pointer;' : '' }}" data-ng-click="sortCol(column)">{{ column }}</span>
                         <button type="submit" class="btn btn-info btn-xs raydata-remove-column-button" data-ng-if="showDeleteButton($index)" data-ng-click="deleteCol(column)"><span class="glyphicon glyphicon-remove"></span></button>
                       </th>
                       <th></th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr ng-repeat="s in scans track by $index" data-ng-click="raydataService.setDetailScan(s)" style="{{ analysisStatus === 'allStatuses' ? 'cursor: pointer;' : '' }}">
+                    <tr ng-repeat="s in scans track by $index" data-ng-click="raydataService.setDetailScan(s)" data-ng-attr-style="{{ analysisStatus === 'allStatuses' ? 'cursor: pointer;' : '' }}">
                       <td style="width: 1%" data-ng-show="showPdfColumn"><input type="checkbox" data-ng-show="showCheckbox(s)" data-ng-checked="pdfSelectedScans[s.rduid]" data-ng-click="togglePdfSelectScan(s.rduid)"/></td>
                       <td width="1%"><span data-header-tooltip="s.status"></span></td>
                       <td data-ng-if="analysisStatus == 'queued'">
@@ -637,7 +643,7 @@ SIREPO.app.directive('scansTable', function() {
 
             function setColumnHeaders() {
                 $scope.columnHeaders = [
-                    ...columnsService.defaultColumns($scope.analysisStatus),
+                    ...columnsService.defaultColumns($scope.analysisStatus, appState),
                     ...appState.models.metadataColumns.selected
                 ];
             }
@@ -791,7 +797,7 @@ SIREPO.app.directive('scansTable', function() {
             };
 
             $scope.showDeleteButton = index => {
-                return index > columnsService.defaultColumns($scope.analysisStatus).length - 1;
+                return index > columnsService.defaultColumns($scope.analysisStatus, appState).length - 1;
             };
 
             $scope.showPdfButton = () => {
@@ -802,8 +808,12 @@ SIREPO.app.directive('scansTable', function() {
                 $scope.runLogScanId = scan.rduid;
             };
 
+            $scope.columnIsSortable = (column) => {
+                return column !== 'stop';
+            };
+
             $scope.sortCol = column => {
-                if (column === 'selected') {
+                if (! $scope.columnIsSortable(column)) {
                     return;
                 }
                 scanArgs.sortColumn = column;
@@ -1114,6 +1124,10 @@ SIREPO.app.directive('scanDetail', function() {
             <div class="well" style="height: 250px; overflow: auto;">
             <div data-ng-if="scan">
               <div><strong>Scan Id:</strong> {{ scan.rduid }}</div>
+              <div data-ng-if="analysisElapsedTime()"><strong>Analysis Elapsed Time:</strong> {{ analysisElapsedTime() }} seconds</div>
+              <div data-ng-if="detailedStatusFile()">
+                <div><strong>Current Consecutive Failures:</strong> {{ consecutiveFailures() }}</div>
+              </div>
               <div data-ng-if="detailedStatusFile()">
                 <div><strong>Most Recent Status</strong></div>
                 <pre>{{ currentStatus() }}</pre>
@@ -1122,10 +1136,6 @@ SIREPO.app.directive('scanDetail', function() {
                 <div><strong>Detailed Status File</strong></div>
                 <pre>{{ detailedStatus() }}</pre>
               </div>
-              <div data-ng-if="detailedStatusFile()">
-                <div><strong>Current Consecutive Failures:</strong> {{ consecutiveFailures() }}</div>
-              </div>
-              <div data-ng-if="analysisElapsedTime()"><strong>Analysis Elapsed Time:</strong> {{ analysisElapsedTime() }} seconds</div>
             </div>
             </div>
 `,
@@ -1177,7 +1187,13 @@ SIREPO.app.directive('scanDetail', function() {
             };
 
             $scope.detailedStatus = () => {
-                return utilities.objectToText($scope.detailedStatusFile());
+                return utilities.objectToText($scope.detailedStatusFile()).replace(
+                    /(start:|stop:)(\s*)(\d+\.?\d*)/gi,
+                    (_, p1, p2, p3) => {
+                        return p1 + p2 + (new Date(parseFloat(p3)*1000)).toString();
+                    }
+                )
+                ;
             };
 
             $scope.detailedStatusFile = () => {

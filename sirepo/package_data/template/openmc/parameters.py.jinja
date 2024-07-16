@@ -46,8 +46,16 @@ def create_materials():
 def create_settings():
     settings = openmc.Settings()
     settings.batches = {{ settings_batches }}
+    settings.statepoint = dict(
+        batches={{ batchSequence }},
+    )
+{% if settings_run_mode == "eigenvalue"  %}
     settings.inactive = {{ settings_inactive }}
+{% endif %}
     settings.particles = {{ settings_particles }}
+    settings.temperature = dict(
+        method='interpolation',
+    )
 {% if settings_varianceReduction == "weight_windows_mesh" or settings_varianceReduction == "weight_windows_tally" %}
     settings.max_splits = {{ settings_max_splits }}
 {% endif %}
