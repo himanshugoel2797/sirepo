@@ -26,6 +26,12 @@ params = {
         _eta_y={{ electronBeam_verticalDispersion }},
         _eta_y_pr={{ electronBeam_verticalDispersionDerivative }},
     ),
+    "beam_offset": dict(
+        _x0={{ electronBeam_horizontalPosition }},
+        _xp0={{ electronBeam_horizontalAngle }},
+        _y0={{ electronBeam_verticalPosition }},
+        _yp0={{ electronBeam_verticalAngle }},
+    ),
     "int_type": {{ simulationSettings_characteristic }},
     "NN": {{ simulationSettings_nx }},
 }
@@ -43,8 +49,8 @@ def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
     # Create the simulation
     NN = params["NN"]
     wavelength = 400
-    Lbend = 0.204  # Length of the magnet
-    Ledge = 0.05  # Fall off in magnetic field as you exit 4-6
+    Lbend = params[sim_title]["Lbend"]  # Length of the magnet
+    Ledge = params[sim_title]["Ledge"]  # Fall off in magnetic field as you exit 4-6
     Ne = params[sim_title]["Ne"]
     p = params[sim_title]["p"]
     windowToLen = params[sim_title]["windowToLen"]
@@ -64,12 +70,7 @@ def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
         Ne=Ne,
         p=p,
         beam_twiss=params["beam_twiss"],
-        beam_offset=dict(
-            _x0=0,
-            _xp0=0,
-            _y0=0,
-            _yp0=0,
-        ),
+        beam_offset=params["beam_offset"],
     )
     a_sim.run_SR_calculation()
     a_sim.propagate_wavefront_through_window(appOne=windowApp, windowToLens=windowToLen)

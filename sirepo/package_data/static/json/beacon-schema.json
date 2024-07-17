@@ -19,12 +19,16 @@
         "Characteristic": [
             ["0", "Single-Electron Intensity"],
             ["1", "Multi-Electron Intensity (disregarding energy spread)"]
+        ],
+        "PlotType": [
+            ["heatmap", "Heatmap"],
+            ["3d", "Heatmap with Histograms"]
         ]
     },
     "frameIdFields": {
-        "B1B2Animation": [],
-        "B2B3Animation": [],
-        "B3B4Animation": []
+        "b1b2Animation": [],
+        "b2b3Animation": [],
+        "b3b4Animation": []
     },
     "localRoutes": {
         "beamline": {
@@ -103,9 +107,18 @@
             "characteristic": ["Characteristic to Plot", "Characteristic", "1"],
             "nx": ["Grid Size", "Integer", 1024, "Number of grid cells in X and Y for the wavefront calculation"]
         },
-        "B1B2Animation": {},
-        "B2B3Animation": {},
-        "B3B4Animation": {}
+        "b1b2Animation": {
+            "colorMap": ["Color Map", "ColorMap", "viridis"],
+            "plotType": ["Plot Type", "PlotType", "3d"]
+        },
+        "b2b3Animation": {
+            "colorMap": ["Color Map", "ColorMap", "viridis"],
+            "plotType": ["Plot Type", "PlotType", "3d"]
+        },
+        "b3b4Animation": {
+            "colorMap": ["Color Map", "ColorMap", "viridis"],
+            "plotType": ["Plot Type", "PlotType", "3d"]
+        }
     },
     "strings": {
         "completionState": ""
@@ -232,17 +245,26 @@
                 "characteristic"
             ]
         },
-        "B1B2Animation": {
+        "b1b2Animation": {
             "title": "B1 - B2",
-            "advanced": []
+            "advanced": [
+                "colorMap",
+                "plotType"
+            ]
         },
-        "B2B3Animation": {
+        "b2b3Animation": {
             "title": "B2 - B3",
-            "advanced": []
+            "advanced": [
+                "colorMap",
+                "plotType"
+            ]
         },
-        "B3B4Animation": {
+        "b3b4Animation": {
             "title": "B3 - B4",
-            "advanced": []
+            "advanced": [
+                "colorMap",
+                "plotType"
+            ]
         }
     }
 }

@@ -4,7 +4,7 @@ var srlog = SIREPO.srlog;
 var srdbg = SIREPO.srdbg;
 
 SIREPO.app.config(function() {
-    SIREPO.SINGLE_FRAME_ANIMATION = ['B1B2Animation', 'B2B3Animation', 'B3B4Animation'];
+    SIREPO.SINGLE_FRAME_ANIMATION = ['b1b2Animation', 'b2b3Animation', 'b3b4Animation'];
     SIREPO.appFieldEditors += `
         <div data-ng-switch-when="VariationElements">
           <div data-variation-elements="" data-model-name="modelName" data-model="model" data-field="field"></div>
@@ -30,6 +30,9 @@ SIREPO.app.controller('BeamlineController', function (appState, frameCache, pane
     self.simHandleStatus = data => {
         self.reports = data.reports;
         frameCache.setFrameCount(data.frameCount || 0);
+    };
+    self.plotType = (name) => {
+        return appState.applicationState()[name].plotType;
     };
     self.simState = persistentSimulation.initSimulationState(self);
 });
@@ -304,10 +307,11 @@ SIREPO.app.directive('variationElements', function() {
             field: '=',
         },
         template: `
-            <div class="control-label col-sm-offset-4 col-sm-3" style="text-align: left"><label>Variations</label></div>
+            <div class="control-label col-sm-offset-2 col-sm-2" style="text-align: left"><label>Variations</label></div>
+            <div class="control-label col-sm-2" style="xtext-align: left"><label>Value</label></div>
             <div class="col-sm-11">
               <div data-ng-repeat="item in items track by item._id">
-                <div class="col-sm-12">
+                <div>
                   <hr />
                   <a href class="sr-beacon-ml-label" data-ng-click="toggleItem(item)" style="text-decoration: none">
                     <span class="glyphicon" data-ng-class="{
@@ -317,9 +321,11 @@ SIREPO.app.directive('variationElements', function() {
                   </a>
                 </div>
                 <div data-ng-show="! isHidden(item)">
-                <div data-ng-repeat="f in item.fields track by $index" class="form-group form-group-sm"
-                  data-model-field="f" data-model-name="item._type" data-model-data="item"
-                  data-label-size="9" data-field-size="3"></div>
+                  <div data-ng-repeat="f in item.fields track by $index" class="form-group form-group-sm">
+                    <div data-model-field="f" data-model-name="item._type" data-model-data="item"
+                      data-label-size="7" data-field-size="3"></div>
+                    <div class="col-sm-2 form-control-static text-right">{{ item.values[$index] }}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -337,6 +343,7 @@ SIREPO.app.directive('variationElements', function() {
             function addFields(item) {
                 item.hidden = true;
                 item.fields = [];
+                item.values = [];
                 if (! $scope.model[$scope.field][item._id]) {
                     $scope.model[$scope.field][item._id] = {};
                 }
@@ -352,6 +359,7 @@ SIREPO.app.directive('variationElements', function() {
                             item.hidden = false;
                         }
                         item.fields.push(f);
+                        item.values.push(item._el[f]);
                     }
                 }
                 $scope.items.push(item);
@@ -362,6 +370,7 @@ SIREPO.app.directive('variationElements', function() {
                     _type: element._type,
                     _id: element._id,
                     title: appState.viewInfo(element._type).title + ' ' + element.title,
+                    _el: element,
                 });
             }
 
@@ -370,6 +379,7 @@ SIREPO.app.directive('variationElements', function() {
                     _type: 'electronBeam',
                     _id: 0,
                     title: appState.viewInfo('electronBeam').title,
+                    _el: appState.applicationState().electronBeam,
                 });
                 for (const el of appState.models.beamline.elements) {
                     addElement(el);
@@ -394,3 +404,28 @@ SIREPO.app.directive('variationElements', function() {
         },
     };
 });
+
+const beaconViewHandler = function(appState, panelState, $scope) {
+    $scope.$on('modelChanged', (event, name) => {
+        if (SIREPO.SINGLE_FRAME_ANIMATION.includes(name)) {
+            const m = appState.applicationState()[name];
+            const updated = [];
+            for (const n of SIREPO.SINGLE_FRAME_ANIMATION) {
+                if (appState.models[n].colorMap != m.colorMap
+                    || appState.models[n].plotType != m.plotType
+                ) {
+                    appState.models[n].colorMap = m.colorMap;
+                    appState.models[n].plotType = m.plotType;
+                    updated.push(n);
+                }
+            }
+            if (updated.length) {
+                appState.saveChanges(updated);
+            }
+        }
+    });
+};
+
+for (const n of ['b1b2Animation', 'b2b3Animation', 'b3b4Animation']) {
+    SIREPO.viewLogic(n + 'View', beaconViewHandler);
+}

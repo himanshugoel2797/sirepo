@@ -13,7 +13,7 @@
   </div>
   <div class="row">
     <div class="col-md-4 col-sm-6" data-ng-repeat="r in beamline.reports track by $index">
-      <div data-report-panel="3d" data-model-name="{{ r }}"></div>
+      <div data-report-panel="{{ beamline.plotType(r) }}" data-model-name="{{ r }}"></div>
     </div>
   </div>
 </div>

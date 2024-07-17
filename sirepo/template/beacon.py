@@ -21,9 +21,9 @@ _MAGS = PKDict(
     B3_and_B4="-1,-1",
 )
 _PLOTS = PKDict(
-    B1B2Animation="B1_and_B2",
-    B2B3Animation="B2_and_B3",
-    B3B4Animation="B3_and_B4",
+    b1b2Animation="B1_and_B2",
+    b2b3Animation="B2_and_B3",
+    b3b4Animation="B3_and_B4",
 )
 _RS_OPT_PARAMETERS_PYTHON_FILE = "rsopt.py"
 _RS_OPT_YML_FILE = "rsopt.yml"
@@ -122,6 +122,8 @@ def _generate_dipoles(data):
     "windowApp": {w.size},
     "mags": ({_MAGS[n]}),
     "Ne": 1,
+    "Lbend": {el.length},
+    "Ledge": {el.edge},
 }},
 """
     return res
