@@ -11,7 +11,7 @@
                 {
                     "_id": 1,
                     "_type": "dipole",
-                    "angle": -0.105,
+                    "angle": 0.105,
                     "edge": 0.005,
                     "length": 0.204,
                     "position": 0,
@@ -53,7 +53,7 @@
                 {
                     "_id": 5,
                     "_type": "dipole",
-                    "angle": 0.105,
+                    "angle": -0.105,
                     "edge": 0.005,
                     "length": 0.204,
                     "photonBeamline": [
@@ -62,7 +62,7 @@
                             "_type": "aperture",
                             "horizontalOffset": 0,
                             "position": 0.83,
-                            "size": 0.0508,
+                            "size": 0.038,
                             "title": "W2",
                             "verticalOffset": 0
                         },

@@ -15,11 +15,6 @@ import srwpy.uti_plot_com
 
 _SIM_DATA, SIM_TYPE, SCHEMA = sirepo.sim_data.template_globals()
 
-_MAGS = PKDict(
-    B1_and_B2="1,1",
-    B2_and_B3="1,-1",
-    B3_and_B4="-1,-1",
-)
 _PLOTS = PKDict(
     b1b2Animation="B1_and_B2",
     b2b3Animation="B2_and_B3",
@@ -99,7 +94,22 @@ def _camera_for_report(data, report):
 
 
 def _generate_dipoles(data):
-    res = ""
+    res = '\n"magnets": {'
+    prev = PKDict()
+    prevname = None
+    for el in data.models.beamline.elements:
+        if el._type == "dipole":
+            res += f"""
+    "{el.title}": {{
+        "bend_angle": {el.angle},
+        "Lbend": {el.length},
+        "Ledge": {el.edge},
+    }},
+"""
+            if prevname:
+                prev[el.title] = prevname
+            prevname = el.title
+    res += "},\n"
     count = 0
     for el in data.models.beamline.elements:
         if el._type == "dipole":
@@ -114,16 +124,19 @@ def _generate_dipoles(data):
                 count += 1
                 res += f"""
 "{n}": {{
-    "bend_angle": {abs(el.angle)},
+    "magnets": ["{prev[el.title]}", "{el.title}"],
     "first_edge_to_window": {el.position + w.position},
-    "secon_edge_to_window": {w.position},
+    "second_edge_to_window": {w.position},
     "p": ({c.wavelength * 1e-9}, {c.wavelength * 1e-9}),
     "windowToLen": {c.position},
     "windowApp": {w.size},
-    "mags": ({_MAGS[n]}),
     "Ne": 1,
-    "Lbend": {el.length},
-    "Ledge": {el.edge},
+    "windowAppX": {w.horizontalOffset},
+    "windowAppY": {w.verticalOffset},
+    "appCam": {c.apertureSize},
+    "appCamX": {c.horizontalOffset},
+    "appCamY": {c.verticalOffset},
+    "camFocalLength": {c.focalLength},
 }},
 """
     return res

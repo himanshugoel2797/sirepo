@@ -34,59 +34,59 @@ params = {
     ),
     "int_type": {{ simulationSettings_characteristic }},
     "NN": {{ simulationSettings_nx }},
+    "beam_energy": {{ electronBeam_energy }},
+    "beam_current": {{ electronBeam_current }},
 }
 
 
-def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
-
-    # Create the simulation
-    first_edge_to_window = params[sim_title]["first_edge_to_window"]  # in meters
-    secon_edge_to_window = params[sim_title]["secon_edge_to_window"]  # in meters
-
-    magnets = sim_title.split("_")
+def run(sim_title="B1_and_B2", savedir="."):
+    sim_args = params[sim_title]
 
     ###########
     # Create the simulation
     NN = params["NN"]
     wavelength = 400
-    Lbend = params[sim_title]["Lbend"]  # Length of the magnet
-    Ledge = params[sim_title]["Ledge"]  # Fall off in magnetic field as you exit 4-6
-    Ne = params[sim_title]["Ne"]
-    p = params[sim_title]["p"]
-    windowToLen = params[sim_title]["windowToLen"]
-    windowApp = params[sim_title]["windowApp"]
+    Ne = sim_args["Ne"]
+    p = sim_args["p"]
 
+    a_mag = params["magnets"][sim_args["magnets"][0]]
     a_sim = F2_Single_Magnet_Multiple_Color_Sim(
         Nx=NN,
-        goal_Bend_Angle=params[sim_title]["bend_angle"]
-        * params[sim_title]["mags"][0]
-        * 180
-        / numpy.pi,
-        meshZ=first_edge_to_window,
+        goal_Bend_Angle=a_mag["bend_angle"] * 180 / numpy.pi,
+        meshZ=sim_args["first_edge_to_window"],  # in meters
         ph_lam=wavelength * 1e-9,
-        L_bend=Lbend,
-        L_edge=Ledge,
-        beam_energy=beam_energy,
+        L_bend=a_mag["Lbend"],
+        L_edge=a_mag["Ledge"],
+        beam_energy=params["beam_energy"],
+        beam_current=params["beam_current"],
         Ne=Ne,
         p=p,
         beam_twiss=params["beam_twiss"],
         beam_offset=params["beam_offset"],
     )
     a_sim.run_SR_calculation()
-    a_sim.propagate_wavefront_through_window(appOne=windowApp, windowToLens=windowToLen)
+    a_sim.propagate_wavefront_through_window(
+        appOne=sim_args["windowApp"],
+        windowToLens=sim_args["windowToLen"],
+        appOneX=sim_args["windowAppX"],
+        appOneY=sim_args["windowAppY"],
+        appCam=sim_args["appCam"],
+        appCamX=sim_args["appCamX"],
+        appCamY=sim_args["appCamY"],
+        camFocalLength=sim_args["camFocalLength"],
+    )
     a_sim.resize_wavefront()
 
+    b_mag = params["magnets"][sim_args["magnets"][1]]
     b_sim = F2_Single_Magnet_Multiple_Color_Sim(
         Nx=NN,
-        goal_Bend_Angle=params[sim_title]["bend_angle"]
-        * params[sim_title]["mags"][1]
-        * 180
-        / numpy.pi,
-        meshZ=secon_edge_to_window,
+        goal_Bend_Angle=b_mag["bend_angle"] * 180 / numpy.pi,
+        meshZ=sim_args["second_edge_to_window"],  # in meters
         ph_lam=wavelength * 1e-9,
-        L_bend=Lbend,
-        L_edge=Ledge,
-        beam_energy=beam_energy,
+        L_bend=b_mag["Lbend"],
+        L_edge=b_mag["Ledge"],
+        beam_energy=params["beam_energy"],
+        beam_current=params["beam_current"],
         Ne=Ne,
         p=p,
         beam_twiss=params["beam_twiss"],
@@ -98,7 +98,16 @@ def run(beam_energy=0.330, sim_title="B1_and_B2", savedir="."):
         ),
     )
     b_sim.run_SR_calculation()
-    b_sim.propagate_wavefront_through_window(appOne=windowApp, windowToLens=windowToLen)
+    b_sim.propagate_wavefront_through_window(
+        appOne=sim_args["windowApp"],
+        windowToLens=sim_args["windowToLen"],
+        appOneX=sim_args["windowAppX"],
+        appOneY=sim_args["windowAppY"],
+        appCam=sim_args["appCam"],
+        appCamX=sim_args["appCamX"],
+        appCamY=sim_args["appCamY"],
+        camFocalLength=sim_args["camFocalLength"],
+    )
     b_sim.resize_wavefront()
     a_sim.add_wavefront(b_sim.wfr)
     srwpy.srwl_bl.SRWLBeamline().calc_int_from_wfr(

@@ -62,8 +62,7 @@
             "title": ["Element Name", "String", "Aperture"],
             "wavelength": ["Wavelength [nm]", "Float", 488.0],
             "apertureSize": ["Aperture Size [m]", "Float", 0.075],
-            "horizontalFocalLength": ["Horizontal Focal Length [m]", "Float", 0.105],
-            "verticalFocalLength": ["Vertical Focal Length [m]", "Float", 0.105],
+            "focalLength": ["Focal Length [m]", "Float", 0.105],
             "horizontalOffset": ["Horizontal Center Position [m]", "Float", 0],
             "verticalOffset": ["Vertical Center Position [m]", "Float", 0]
         },
@@ -150,13 +149,12 @@
                 "position",
                 "wavelength",
                 "apertureSize",
+                "focalLength",
                 [
                     ["Horizontal", [
-                        "horizontalFocalLength",
                         "horizontalOffset"
                     ]],
                     ["Vertical", [
-                        "verticalFocalLength",
                         "verticalOffset"
                     ]]
                 ]
