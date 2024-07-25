@@ -1,6 +1,7 @@
 
 import sirepo.template.srw_debug
 
+import json
 import numpy
 import os
 import srwpy.srwl_bl
@@ -90,12 +91,7 @@ def run(sim_title="B1_and_B2", savedir="."):
         Ne=Ne,
         p=p,
         beam_twiss=params["beam_twiss"],
-        beam_offset=dict(
-            _x0=0,
-            _xp0=0,
-            _y0=0,
-            _yp0=0,
-        ),
+        beam_offset=params["beam_offset"],
     )
     b_sim.run_SR_calculation()
     b_sim.propagate_wavefront_through_window(
@@ -120,6 +116,10 @@ def run(sim_title="B1_and_B2", savedir="."):
 
 
 def main():
+{% if rsoptRun %}
+    with open("config.json", "w", encoding="utf-8") as f:
+        json.dump(params, f, ensure_ascii=False, indent=4)
+{% endif %}
     for method in ["B1_and_B2", "B2_and_B3", "B3_and_B4"]:
         run(sim_title=method)
 

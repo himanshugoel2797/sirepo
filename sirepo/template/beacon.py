@@ -145,9 +145,13 @@ def _generate_dipoles(data):
 def _generate_rsopt_method(data):
     return """
 def rsopt_run(*args, **kwargs):
-    for k, v in kwargs.items():
-        n, f = k.split('.')
-        params[n][f] = v
+    for key, value in kwargs.items():
+        v = params
+        path = list(key.split("."))
+        k = path.pop()
+        for p in path:
+            v = v[p]
+        v[k] = value
     main()
 """
 
