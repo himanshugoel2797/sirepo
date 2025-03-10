@@ -152,7 +152,7 @@ def register_api_module(module):
             _api_funcs[n] = _Route(func=o, cls=c, func_name=n)
 
 
-def start_tornado(ip, port, debug):
+def start_tornado(ip, port, debug, is_primary=True):
     """Start tornado server, does not return"""
     from tornado import httpserver, ioloop, web, log, websocket
 
