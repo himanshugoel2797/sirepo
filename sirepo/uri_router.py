@@ -316,6 +316,13 @@ def start_tornado(ip, port, debug, is_primary=True):
         def set_log_user(self, log_user):
             self.log_user = log_user
 
+    def _cron_and_start():
+        from sirepo import cron
+
+        l = ioloop.IOLoop.current()
+        cron.CronTask.init_class(l if is_primary else None)
+        l.start()
+
     def _log(handler, which="end", fmt="", args=None):
         r = handler.request
         f = "{} ip={} uri={} "
@@ -366,7 +373,7 @@ def start_tornado(ip, port, debug, is_primary=True):
         max_buffer_size=sirepo.job.cfg().max_message_bytes,
     ).listen(port=port, address=ip)
     log.enable_pretty_logging()
-    ioloop.IOLoop.current().start()
+    _cron_and_start()
 
 
 def uri_for_api(api_name, params=None):

@@ -165,11 +165,11 @@ def server():
 
 
 def tornado():
-    def _is_primary(kw):
+    def _is_primary(**kwargs):
         """By default always primary, or if matches port"""
         p = _cfg().tornado_primary_port
-        kw["is_primary"] = p is None or p == kw.port
-        return kw
+        kwargs["is_primary"] = p is None or p == kwargs["port"]
+        return kwargs
 
     with pkio.save_chdir(_run_dir()) as r:
         d = pkconfig.in_dev_mode()
