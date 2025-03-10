@@ -76,8 +76,11 @@ class CronTask:
             await self._coro_func(self._params)
             if self._destroyed:
                 break
-            # Sleep exactly
-            await asyncio.sleep((sirepo.srtime.utc_now_as_float() - t) + self._period)
+            # Sleep exactly period. If coro_func ran over, then start immediately.
+            # Always sleep so yields to event loop
+            await asyncio.sleep(
+                self._period - max(sirepo.srtime.utc_now_as_float() - t, self._period),
+            )
 
     def _start(self):
         if self._destroyed or self._loop is False:
@@ -85,7 +88,4 @@ class CronTask:
         self._instances.add(self)
         if self._loop is None:
             return
-        # Keeps a global reference to the task so to avoid the garbage
-        # collector running before the task is run.
-        # https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
-        self._task = self._loop.create_task(self._poll)
+        self._loop.add_callback(self._poll)
