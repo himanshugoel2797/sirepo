@@ -70,7 +70,7 @@ class API(sirepo.quest.API):
         res = PKDict(
             email=req.req_data.email,
             password=req.req_data.password,
-            dn="mail="
+            dn=_cfg.dn_prefix
             + re.sub(_ESCAPE_DN_MAIL, r"\\\1", req.req_data.email)
             + _cfg.dn_suffix,
         )
@@ -101,5 +101,8 @@ def init_apis(*args, **kwargs):
         ),
         dn_suffix=pkconfig.RequiredUnlessDev(
             ",ou=users,dc=example,dc=com", _cfg_dn_suffix, "ou and dc values of dn"
+        ),
+        dn_prefix=pkconfig.RequiredUnlessDev(
+            "mail=", _cfg_dn_suffix, "prefix from username/email of dn"
         ),
     )

@@ -3705,7 +3705,7 @@ SIREPO.app.directive('ldapLogin', function (requestSender) {
                 </div>
               </div>
               <div class="form-group">
-                <label class="col-sm-2 control-label">Email</label>
+                <label class="col-sm-2 control-label">Email/Username</label>
                 <div class="col-sm-10">
                   <input type="text" value='' maxlength="256" class="form-control" data-ng-model="email"/>
                 </div>
