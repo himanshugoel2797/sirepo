@@ -41,7 +41,7 @@ class API(sirepo.quest.API):
             try:
                 ldap.initialize(_cfg.server).simple_bind_s(creds.dn, creds.password)
             except Exception as e:
-                m = "Unable to contact LDAP server"
+                m = "Unable to contact LDAP server (%s, %s)"%(creds.dn, _cfg.server)
                 if isinstance(e, ldap.INVALID_CREDENTIALS):
                     m = _INVALID_CREDENTIALS
                 pkdlog("{} email={}", e, creds.email)
