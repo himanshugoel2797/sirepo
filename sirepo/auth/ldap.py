@@ -70,7 +70,7 @@ class API(sirepo.quest.API):
         res = PKDict(
             email=req.req_data.email,
             password=req.req_data.password,
-            dn=_cfg.dn_prefix
+            dn="BNL\\"
             + re.sub(_ESCAPE_DN_MAIL, r"\\\1", req.req_data.email)
             + _cfg.dn_suffix,
         )
