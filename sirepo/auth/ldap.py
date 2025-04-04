@@ -96,13 +96,13 @@ def init_apis(*args, **kwargs):
     global _cfg
 
     _cfg = pkconfig.init(
-        server=pkconfig.RequiredUnlessDev(
+        server=(
             "ldap://127.0.0.1:389", str, " ldap://ip:port"
         ),
-        dn_suffix=pkconfig.RequiredUnlessDev(
+        dn_suffix=(
             ",ou=users,dc=example,dc=com", _cfg_dn_suffix, "ou and dc values of dn"
         ),
-        dn_prefix=pkconfig.RequiredUnlessDev(
+        dn_prefix=(
             "mail=", _cfg_dn_suffix, "prefix from username/email of dn"
         ),
     )
