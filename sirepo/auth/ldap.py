@@ -103,6 +103,6 @@ def init_apis(*args, **kwargs):
             _cfg_dn_suffix, "ou and dc values of dn"
         ),
         dn_prefix=pkconfig.Required(
-            _cfg_dn_suffix, "prefix from username/email of dn"
+            str, "prefix from username/email of dn"
         ),
     )
