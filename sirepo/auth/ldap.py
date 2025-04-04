@@ -11,6 +11,7 @@ import ldap
 import re
 import sirepo.quest
 import sirepo.util
+import traceback
 
 AUTH_METHOD = "ldap"
 
@@ -44,7 +45,7 @@ class API(sirepo.quest.API):
                 m = "Unable to contact LDAP server"
                 if isinstance(e, ldap.INVALID_CREDENTIALS):
                     m = _INVALID_CREDENTIALS
-                pkdlog("{} email={} dn={}", e, creds.email, creds.dn)
+                pkdlog("{} {} email={} dn={}", e, traceback.format_exc(e), creds.email, creds.dn)
                 return m
 
         def _user(email):
