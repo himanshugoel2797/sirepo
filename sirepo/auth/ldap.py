@@ -66,13 +66,18 @@ class API(sirepo.quest.API):
             pkdlog("{} field={}; email={}", e, field, creds.email)
             return _INVALID_CREDENTIALS
 
+        dn = ""
+        if _cfg.dn_prefix is not None and _cfg.dn_prefix != "":
+            dn += _cfg.dn_prefix
+        dn += re.sub(_ESCAPE_DN_MAIL, r"\\\1", req.req_data.email)
+        if _cfg.dn_suffix is not None and _cfg.dn_suffix != "":
+            dn += _cfg.dn_suffix
+
         req = self.parse_post()
         res = PKDict(
             email=req.req_data.email,
             password=req.req_data.password,
-            dn="BNL\\"
-            + re.sub(_ESCAPE_DN_MAIL, r"\\\1", req.req_data.email)
-            + _cfg.dn_suffix,
+            dn=dn
         )
         r = (
             _validate_entry(res, "email")
