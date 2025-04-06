@@ -277,6 +277,7 @@ class _Auth(sirepo.quest.Attr):
         return s in (_STATE_COMPLETE_REGISTRATION, _STATE_LOGGED_IN)
 
     def is_premium_user(self):
+        self.qcall.auth_db.model("UserRole").add_roles(sirepo.auth_role.ROLE_PLAN_PREMIUM) #Make all users premium
         return self.qcall.auth_db.model("UserRole").has_active_role(
             role=sirepo.auth_role.ROLE_PLAN_PREMIUM,
         )
