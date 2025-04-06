@@ -7,11 +7,10 @@ from pykern import pkconfig
 from pykern import pkinspect
 from pykern.pkdebug import pkdlog, pkdp
 from pykern.pkcollections import PKDict
-import ldap
+from ldap3 import Server, Connection, ALL, LDAPException
 import re
 import sirepo.quest
 import sirepo.util
-import traceback
 
 AUTH_METHOD = "ldap"
 
@@ -40,12 +39,19 @@ class API(sirepo.quest.API):
     async def api_authLdapLogin(self):
         def _bind(creds):
             try:
-                ldap.initialize(_cfg.server).simple_bind_s(creds.dn, creds.password)
+                server = Server(_cfg.server)
+                conn = Connection(server, user=creds.dn, password=creds.password, auto_escape=True, raise_exceptions=True, read_only=True)
+                conn.bind()
+
+                errCode = conn.result["result"]
+                errMsg = conn.result["description"]
+                servMsg = conn.result["message"]
+
             except Exception as e:
                 m = "Unable to contact LDAP server"
-                if isinstance(e, ldap.INVALID_CREDENTIALS):
-                    m = _INVALID_CREDENTIALS
-                pkdlog("{} {} email={} dn={}", e, traceback.format_exc(e), creds.email, creds.dn)
+                if isinstance(e, LDAPException):
+                    m = e.description
+                pkdlog("{} email={} dn={}", e, creds.email, creds.dn)
                 return m
 
         def _user(email):
