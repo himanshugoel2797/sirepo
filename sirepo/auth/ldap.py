@@ -7,7 +7,8 @@ from pykern import pkconfig
 from pykern import pkinspect
 from pykern.pkdebug import pkdlog, pkdp
 from pykern.pkcollections import PKDict
-from ldap3 import Server, Connection, ALL, LDAPException
+from ldap3 import Server, Connection, ALL
+from ldap3.core.exceptions import LDAPException
 import re
 import sirepo.quest
 import sirepo.util
