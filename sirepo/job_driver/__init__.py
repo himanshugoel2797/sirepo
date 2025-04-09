@@ -73,7 +73,7 @@ class DriverBase(PKDict):
             # TODO(robnagler) sbatch could override OP_RUN, but not OP_ANALYSIS
             # because OP_ANALYSIS touches the directory sometimes. Reasonably
             # there should only be one OP_ANALYSIS running on an agent at one time.
-            op_slot_q=PKDict({k: job_supervisor.SlotQueue() for k in job.SLOT_OPS}),
+            op_slot_q=PKDict({k: job_supervisor.SlotQueue(5) for k in job.SLOT_OPS}),
             uid=op.msg.uid,
             _agent_id=sirepo.util.unique_key(),
             _agent_life_change_lock=tornado.locks.Lock(),
