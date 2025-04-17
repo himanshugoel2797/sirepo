@@ -1037,6 +1037,15 @@ EOF"""
 #SBATCH --tasks-per-node={self.msg.tasksPerNode}
 {sirepo.nersc.sbatch_project_option(self.msg.sbatchProject)}"""
 
+        def _port_forward():
+            # Setup an SSH port forward to the login node, obtain the login node hostname, then use it as ssh target
+            return f"""ssh_login_node=$(jq -r '.host' $SIREPO_SRDB_ROOT/{_PID_FILE})
+            ssh -fNM -S /tmp/{self.jid} -R 7001:localhost:7001 $ssh_login_node"""
+        
+        def _close_portforward():
+            # Close the port forward once done
+            return f"ssh -S /tmp/{self.jid} -O exit $ssh_login_node"
+
         def _srun():
             return "srun" + (
                 " --cpu-bind=cores" if self.msg.get("shifterImage") else ""
@@ -1063,8 +1072,10 @@ EOF"""
 {_shifter_header()}
 {self.job_cmd_env()}
 {self.job_cmd_source_bashrc()}
+{_port_forward()}
 {_sim_run_dir_prepare()}
 # POSIT: same as return value of sim_run_dir_prepare
+{_close_portforward()}
 exec {_srun()} {_python()} {template_common.PARAMETERS_PYTHON_FILE}
 """
         )
