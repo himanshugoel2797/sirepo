@@ -12,6 +12,7 @@ from pykern.pkdebug import pkdp, pkdlog, pkdexc
 from sirepo import job
 from sirepo import job_driver
 from sirepo import util
+import asyncio
 import asyncssh
 import datetime
 import errno
@@ -67,6 +68,11 @@ class SbatchDriver(job_driver.DriverBase):
         except tornado.websocket.WebSocketClosedError:
             self._websocket = None
             pkdlog("websocket closed {}", self)
+        except Exception as e:
+            pkdlog("{} error={} stack={}", self, e, pkdexc())
+
+        try:
+            await self.conn.close()
         except Exception as e:
             pkdlog("{} error={} stack={}", self, e, pkdexc())
 
@@ -178,7 +184,8 @@ class SbatchDriver(job_driver.DriverBase):
         def _creds():
             self._assert_creds(op.msg)
             return PKDict(
-                known_hosts=self._KNOWN_HOSTS,
+                #known_hosts=self._KNOWN_HOSTS,
+                known_hosts=None,
                 password=(
                     self._creds.password + self._creds.otp
                     if "nersc" in self.cfg.host
@@ -235,17 +242,20 @@ cd '{self._srdb_root}'
 disown
 """
         try:
-            async with asyncssh.connect(self.cfg.host, **_creds()) as c:
-                async with c.create_process("/bin/bash --noprofile --norc -l") as p:
-                    await _get_agent_log(c, before_start=True)
-                    o, e = await p.communicate(input=script)
-                    if o or e:
-                        _write_to_log(o, e, "start")
-                self.driver_details.pkupdate(
-                    host=self.cfg.host,
-                    username=self._creds.username,
-                )
-                await _get_agent_log(c, before_start=False)
+            self.conn = await asyncssh.connect(self.cfg.host, **_creds())  
+            c = self.conn
+            listener = await c.forward_remote_port('', 7001, 'localhost', 7001) # TODO(hgoel) Pick a remote port to point to the local supervisor port
+            self.conn_listener = asyncio.create_task(listener.wait_closed()) # Listen until the connection closes, need to figure out if we should worry about terminating it on our own
+            async with c.create_process("/bin/bash --noprofile --norc -l") as p:
+                await _get_agent_log(c, before_start=True)
+                o, e = await p.communicate(input=script)
+                if o or e:
+                    _write_to_log(o, e, "start")
+            self.driver_details.pkupdate(
+                host=self.cfg.host,
+                username=self._creds.username,
+            )
+            await _get_agent_log(c, before_start=False) 
         except Exception as e:
             pkdlog("error={} stack={}", e, pkdexc())
             self._srdb_root = None
