@@ -179,7 +179,8 @@ class SbatchDriver(job_driver.DriverBase):
         def _creds():
             self._assert_creds(op.msg)
             return PKDict(
-                known_hosts=self._KNOWN_HOSTS,
+                #known_hosts=self._KNOWN_HOSTS,
+                known_hosts=None,
                 password=(
                     self._creds.password + self._creds.otp
                     if "nersc" in self.cfg.host
