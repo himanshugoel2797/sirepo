@@ -71,6 +71,11 @@ class SbatchDriver(job_driver.DriverBase):
         except Exception as e:
             pkdlog("{} error={} stack={}", self, e, pkdexc())
 
+        try:
+            await self.conn.close()
+        except Exception as e:
+            pkdlog("{} error={} stack={}", self, e, pkdexc())
+
     @classmethod
     def get_instance(cls, op):
         u = op.msg.uid
@@ -237,19 +242,20 @@ cd '{self._srdb_root}'
 disown
 """
         try:
-            async with asyncssh.connect(self.cfg.host, **_creds()) as c:
-                listener = await c.forward_remote_port('', 7001, 'localhost', 7001) # TODO(hgoel) Pick a remote port to point to the local supervisor port
-                asyncio.create_task(listener.wait_closed()) # Listen until the connection closes, need to figure out if we should worry about terminating it on our own
-                async with c.create_process("/bin/bash --noprofile --norc -l") as p:
-                    await _get_agent_log(c, before_start=True)
-                    o, e = await p.communicate(input=script)
-                    if o or e:
-                        _write_to_log(o, e, "start")
-                self.driver_details.pkupdate(
-                    host=self.cfg.host,
-                    username=self._creds.username,
-                )
-                await _get_agent_log(c, before_start=False) 
+            self.conn = await asyncssh.connect(self.cfg.host, **_creds())  
+            c = self.conn
+            listener = await c.forward_remote_port('', 7001, 'localhost', 7001) # TODO(hgoel) Pick a remote port to point to the local supervisor port
+            self.conn_listener = asyncio.create_task(listener.wait_closed()) # Listen until the connection closes, need to figure out if we should worry about terminating it on our own
+            async with c.create_process("/bin/bash --noprofile --norc -l") as p:
+                await _get_agent_log(c, before_start=True)
+                o, e = await p.communicate(input=script)
+                if o or e:
+                    _write_to_log(o, e, "start")
+            self.driver_details.pkupdate(
+                host=self.cfg.host,
+                username=self._creds.username,
+            )
+            await _get_agent_log(c, before_start=False) 
         except Exception as e:
             pkdlog("error={} stack={}", e, pkdexc())
             self._srdb_root = None
