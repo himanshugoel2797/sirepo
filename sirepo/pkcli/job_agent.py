@@ -1040,7 +1040,7 @@ EOF"""
         def _port_forward():
             # Setup an SSH port forward to the login node, obtain the login node hostname, then use it as ssh target
             return f"""ssh_login_node=$(jq -r '.host' $SIREPO_SRDB_ROOT/{_PID_FILE})
-            ssh -fNM -S /tmp/{self.jid} -R 7001:localhost:7001 $ssh_login_node"""
+ssh -fNM -S /tmp/{self.jid} -R 7001:localhost:7001 $ssh_login_node"""
         
         def _close_portforward():
             # Close the port forward once done
