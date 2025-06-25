@@ -304,9 +304,18 @@ if __name__ == '__main__':
             py_script_output = await c.create_process(f"python3 {remote_tmp_dir_path}/forward_unix_socket.py {dest_domain_socket0} {remote_tmp_dir_path}/port_number0")  # Use bash to run the script
             #Make sure the process has not exited and retrieve the port number
             port_forward_output0, _ = await c.run(
-                f"cat {remote_tmp_dir_path}/port_number0",
-                check=True,
+                f"cat {remote_tmp_dir_path}/port_number0"
             )
+            attempts = 0
+            while port_forward_output0.exit_status != 0 and attempts < 10:
+                # Wait for the script to finish
+                await asyncio.sleep(1)
+                port_forward_output0, _ = await c.run(
+                    f"cat {remote_tmp_dir_path}/port_number0"
+                )
+                attempts += 1
+            if port_forward_output0.exit_status != 0:
+                raise Exception(f"Failed to retrieve port number: {port_forward_output0.stderr}")
             # Parse the port number from the output
             port_forward0 = int(port_forward_output0.strip())
             pkdlog("Port {} forwarded to: {}", supervisor_port, port_forward0)
