@@ -301,7 +301,7 @@ if __name__ == '__main__':
                 raise Exception(f"Failed to write script: {py_script_write.stderr}")
 
 
-            py_script_output = await c.create_process("python3 {remote_tmp_dir_path}/forward_unix_socket.py {dest_domain_socket0} {remote_tmp_dir_path}/port_number0")  # Use bash to run the script
+            py_script_output = await c.create_process(f"python3 {remote_tmp_dir_path}/forward_unix_socket.py {dest_domain_socket0} {remote_tmp_dir_path}/port_number0")  # Use bash to run the script
             #Make sure the process has not exited and retrieve the port number
             port_forward_output0, _ = await c.run(
                 f"cat {remote_tmp_dir_path}/port_number0",
