@@ -302,7 +302,7 @@ if __name__ == '__main__':
                 f"python3 {remote_tmp_dir_path}/forward_unix_socket.py {dest_domain_socket0}"
             )
             #Make sure the process has not exited and retrieve the port number
-            port_forward_output0, _ = await py_script_run0.communicate()
+            port_forward_output0, _ = await py_script_run0.stdout.readline()
             # Parse the port number from the output
             port_forward0 = int(port_forward_output0.strip())
             pkdlog("Port {} forwarded to: {}", supervisor_port, port_forward0)
