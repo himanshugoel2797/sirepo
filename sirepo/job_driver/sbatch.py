@@ -265,7 +265,8 @@ def forward_unix_socket(unix_socket_path, sock_file):
         lan_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lan_socket.bind(('', 0))  # Bind to a random port
         lan_socket.listen()
-        print(lan_socket.getsockname()[1], file=sock_file)
+        with open(sock_file, 'w') as sock_fd:
+            print(lan_socket.getsockname()[1], file=sock_fd)
 
         while True:
             try:
