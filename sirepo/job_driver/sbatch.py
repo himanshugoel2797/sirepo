@@ -300,7 +300,9 @@ if __name__ == '__main__':
             if py_script_write.exit_status != 0:
                 raise Exception(f"Failed to write script: {py_script_write.stderr}")
 
-            py_script_sh = f"""python3 {remote_tmp_dir_path}/forward_unix_socket.py {dest_domain_socket0} {remote_tmp_dir_path}/port_number0
+            py_script_sh = f"""#!/bin/bash
+set -euo pipefail
+python3 {remote_tmp_dir_path}/forward_unix_socket.py {dest_domain_socket0} {remote_tmp_dir_path}/port_number0
 disown
 """
 
