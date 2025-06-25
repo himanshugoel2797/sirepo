@@ -300,17 +300,8 @@ if __name__ == '__main__':
             if py_script_write.exit_status != 0:
                 raise Exception(f"Failed to write script: {py_script_write.stderr}")
 
-            py_script_sh = f"""#!/bin/bash
-set -euo pipefail
-python3 {remote_tmp_dir_path}/forward_unix_socket.py {dest_domain_socket0} {remote_tmp_dir_path}/port_number0
-disown
-"""
 
-            async with c.create_process("/bin/bash --noprofile --norc -l") as p:  # Use bash to run the script
-                o, e = await p.communicate(input=py_script_sh)
-                if o or e:
-                    _write_to_log(o, e, "forward_unix_socket")
-
+            py_script_output = await c.create_process("python3 {remote_tmp_dir_path}/forward_unix_socket.py {dest_domain_socket0} {remote_tmp_dir_path}/port_number0")  # Use bash to run the script
             #Make sure the process has not exited and retrieve the port number
             port_forward_output0, _ = await c.run(
                 f"cat {remote_tmp_dir_path}/port_number0",
