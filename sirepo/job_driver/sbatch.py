@@ -289,11 +289,11 @@ def handle_connection(src, dst):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        sys.exit("Usage: " + sys.argv[0] + " <unix_socket_path>")
+        sys.exit('Usage: ' + sys.argv[0] + ' <unix_socket_path>')
     forward_unix_socket(sys.argv[1])
 """
             py_script_write = await c.run(
-                f"echo -n '{py_script}' > {remote_tmp_dir_path}/forward_unix_socket.py",
+                f"echo -n \"{py_script}\" > {remote_tmp_dir_path}/forward_unix_socket.py",
                 check=True,
             )
             if py_script_write.exit_status != 0:
