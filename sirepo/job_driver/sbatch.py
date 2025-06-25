@@ -247,8 +247,15 @@ class SbatchDriver(job_driver.DriverBase):
             listener0 = await c.forward_remote_path_to_port(dest_domain_socket0, '', supervisor_port)
             self.conn_listener0 = asyncio.create_task(listener0.wait_closed())
 
+            #Get the hostname
+            hostname = await c.run("hostname", check=True)
+            if hostname.exit_status != 0:
+                raise Exception(f"Failed to get hostname: {hostname.stderr}")
+            hostname = hostname.stdout.strip()
+            pkdlog("hostname={}", hostname)
+
             # Copy over the python script run it and retrieve the port number assigned to the script
-            py_script  = """#!/usr/bin/env python3
+            py_script  = f"""#!/usr/bin/env python3
 # This script forwards an existing unix domain socket to a socket on a random port and reports the port number
 import socket, sys, threading
 
@@ -269,7 +276,7 @@ def forward_unix_socket(unix_socket_path):
                 threading.Thread(target=handle_connection, args=(lan_conn, unix_socket)).start()
                 threading.Thread(target=handle_connection, args=(unix_socket, lan_conn)).start()
             except Exception as e:
-                print(f"Error handling connection: {e}")
+                print(e)
     finally:
         lan_socket.close()
 
@@ -300,11 +307,7 @@ if __name__ == '__main__':
             port_forward0 = int(port_forward_output0.strip())
             pkdlog("Port {} forwarded to: {}", supervisor_port, port_forward0)
 
-            #Get the hostname and update the supervisor URI
-            hostname = await c.run("hostname", check=True)
-            if hostname.exit_status != 0:
-                raise Exception(f"Failed to get hostname: {hostname.stderr}")
-            hostname = hostname.stdout.strip()
+            # Update the supervisor URI to use the forwarded port
             self.cfg.supervisor_uri = f"{supervisor_uri.scheme}://{hostname}:{port_forward0}{supervisor_uri.path}"
 
         except Exception as e:
