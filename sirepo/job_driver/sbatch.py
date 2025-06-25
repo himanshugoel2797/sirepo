@@ -259,13 +259,13 @@ class SbatchDriver(job_driver.DriverBase):
 # This script forwards an existing unix domain socket to a socket on a random port and reports the port number
 import socket, sys, threading
 
-def forward_unix_socket(unix_socket_path):
+def forward_unix_socket(unix_socket_path, sock_file):
     # Accept any incoming connection and forward it to the Unix socket
     try:
         lan_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         lan_socket.bind(('', 0))  # Bind to a random port
         lan_socket.listen()
-        print(lan_socket.getsockname()[1])
+        print(lan_socket.getsockname()[1], file=sock_file)
 
         while True:
             try:
@@ -288,9 +288,9 @@ def handle_connection(src, dst):
         dst.close()
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        sys.exit('Usage: ' + sys.argv[0] + ' <unix_socket_path>')
-    forward_unix_socket(sys.argv[1])
+    if len(sys.argv) != 3:
+        sys.exit('Usage: ' + sys.argv[0] + ' <unix_socket_path> <sock_file>')
+    forward_unix_socket(sys.argv[1], sys.argv[2])
 """
             py_script_write = await c.run(
                 f"echo -n \"{py_script}\" > {remote_tmp_dir_path}/forward_unix_socket.py",
@@ -298,11 +298,21 @@ if __name__ == '__main__':
             )
             if py_script_write.exit_status != 0:
                 raise Exception(f"Failed to write script: {py_script_write.stderr}")
-            py_script_run0 = await c.create_process(
-                f"python3 {remote_tmp_dir_path}/forward_unix_socket.py {dest_domain_socket0}"
-            )
+
+            py_script_sh = f"""python3 {remote_tmp_dir_path}/forward_unix_socket.py {dest_domain_socket0} {remote_tmp_dir_path}/port_number0
+disown
+"""
+
+            async with c.create_process("/bin/bash --noprofile --norc -l") as p:  # Use bash to run the script
+                o, e = await p.communicate(input=py_script_sh)
+                if o or e:
+                    _write_to_log(o, e, "forward_unix_socket")
+
             #Make sure the process has not exited and retrieve the port number
-            port_forward_output0, _ = await py_script_run0.stdout.readline()
+            port_forward_output0, _ = await c.run(
+                f"cat {remote_tmp_dir_path}/port_number0",
+                check=True,
+            )
             # Parse the port number from the output
             port_forward0 = int(port_forward_output0.strip())
             pkdlog("Port {} forwarded to: {}", supervisor_port, port_forward0)
