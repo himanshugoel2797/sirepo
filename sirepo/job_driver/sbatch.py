@@ -247,6 +247,12 @@ class SbatchDriver(job_driver.DriverBase):
             self.conn = await asyncssh.connect(self.cfg.host, **_creds())
 
             if not is_supervisor_uri_proper:
+                # Get the port number of the supervisor URI
+                supervisor_port = supervisor_uri.port
+                if not supervisor_port:
+                    # If the port is not specified, use the default port for HTTPS or HTTP
+                    supervisor_port = 443 if supervisor_uri.scheme == 'https' else 80
+
                 # Create temporary directory on the server, owned by the user, and place the domain socket in it
                 remote_tmp_dir = await self.conn.run("mktemp -d /tmp/sirepo-sbatch-XXXXXX", check=True)
                 remote_tmp_dir_path = remote_tmp_dir.stdout.strip()
@@ -259,11 +265,6 @@ class SbatchDriver(job_driver.DriverBase):
                 if hostname.exit_status != 0:
                     raise Exception(f"Failed to get hostname: {hostname.stderr}")
                 hostname = hostname.stdout.strip()
-                # Get the port number of the supervisor URI
-                supervisor_port = supervisor_uri.port
-                if not supervisor_port:
-                    # If the port is not specified, use the default port for HTTPS or HTTP
-                    supervisor_port = 443 if supervisor_uri.scheme == 'https' else 80
 
                 # Copy over the python script run it and retrieve the port number assigned to the script
                 py_script  = f"""#!/usr/bin/env python3
