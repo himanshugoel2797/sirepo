@@ -272,7 +272,8 @@ def forward_unix_socket(unix_socket_path, sock_file):
             try:
                 # Accept a connection from the LAN socket
                 lan_conn, _ = lan_socket.accept()
-                unix_socket = socket.create_connection((unix_socket_path,),family=socket.AF_UNIX)
+                unix_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                unix_socket.connect(unix_socket_path)
                 # Handle the connection in a separate thread for each direction
                 threading.Thread(target=handle_connection, args=(lan_conn, unix_socket)).start()
                 threading.Thread(target=handle_connection, args=(unix_socket, lan_conn)).start()
