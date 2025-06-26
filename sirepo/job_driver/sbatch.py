@@ -244,7 +244,7 @@ class SbatchDriver(job_driver.DriverBase):
             remote_tmp_dir = await c.run("mktemp -d /tmp/sirepo-sbatch-XXXXXX", check=True)
             remote_tmp_dir_path = remote_tmp_dir.stdout.strip()
             dest_domain_socket0 = f"{remote_tmp_dir_path}/sbatch0.sock"
-            listener0 = await c.forward_remote_path_to_port(dest_domain_socket0, '', supervisor_port)
+            listener0 = await c.forward_remote_path_to_port(dest_domain_socket0, 'localhost', supervisor_port)
             self.conn_listener0 = asyncio.create_task(listener0.wait_closed())
 
             #Get the hostname
